@@ -19,10 +19,12 @@ Results for the following worklists can be viewed:
 mix (64 samples, 19 positive)
 
 # Run tool
+```
 cd /data/jess_tmp/fh/Rshiny
 R
 library(shiny)
 runApp("splice")
+```
 
 # Author
 Jessica Kan
