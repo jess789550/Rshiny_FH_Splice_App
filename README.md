@@ -18,13 +18,16 @@ Results for the following worklists can be viewed:
 2331473 (64 samples, 1 positive)
 mix (64 samples, 19 positive)
 
-# Run tool
+# Run app locally
 ```
 cd /data/jess_tmp/fh/Rshiny
 R
 library(shiny)
 runApp("splice")
 ```
+
+# View app online
+https://jessicakan.shinyapps.io/splice/ 
 
 # Author
 Jessica Kan
