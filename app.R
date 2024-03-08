@@ -1,6 +1,7 @@
 # Load library
 library(shiny)
 library(DT)
+library(shinydashboard) # for box()
 
 # Define UI: https://shiny.posit.co/r/gallery/widgets/basic-datatable/
 ui <- fluidPage(
@@ -39,8 +40,10 @@ ui <- fluidPage(
   mainPanel(
 
     # Table of splice variants and prediction scores
+    box(style='width:1000px;overflow-x: scroll; overflow-y: scroll;',
     DT::dataTableOutput("splice_table") #,
-
+    )
+    
     # Table of performance metrics
     # DT::dataTableOutput("metrics_table")
   )
@@ -51,27 +54,39 @@ server <- function(input, output) {
 
   # Filter data based on selections
   output$splice_table <- DT::renderDataTable(DT::datatable({
-    file <- paste("/data/jess_tmp/fh/Rshiny/splice/", input$worklist, ".csv", sep="")
-
+    #file <- paste("/data/jess_tmp/fh/Rshiny/splice/", input$worklist, ".csv", sep="")
+    file <- paste(input$worklist, ".csv", sep="")
+    
     data <- read.csv(file)
+    
     if (input$SpliceAI != "All") {
       data <- subset(data, SpliceAI_DS_AG > input$SpliceAI | SpliceAI_DS_AL > input$SpliceAI | SpliceAI_DS_DG > input$SpliceAI | SpliceAI_DS_DL > input$SpliceAI)
     }
+    
     if (input$MES != "All") {
-      data <- subset(data, MaxEntScan_diff < 0 & MaxEntScan_alt > input$MES | MaxEntScan_diff > 0 & MaxEntScan_alt < input$MES)
+      data <- subset(data, (MaxEntScan_diff < 0 & MaxEntScan_alt > input$MES) | (MaxEntScan_diff > 0 & MaxEntScan_alt < input$MES))
     }
+    
     # if (input$GeneSplicer != "All") {
     #   data <- subset(data, GeneSplicer_score > input$GeneSplicer)
     # }
+    
+    #if (input$MMSplice != "All") {
+      #data <- subset(data, (mmsplice_delta_logit_psi > input$MMSplice) | (mmsplice_delta_logit_psi < (input$MMSplice * -1)))
+    #}
+    
     if (input$MMSplice != "All") {
-      data <- subset(data, mmsplice_delta_logit_psi > input$MMSplice | mmsplice_delta_logit_psi < (input$MMSplice * -1))
+      data <- rbind(data[as.numeric(data$mmsplice_delta_logit_psi) < (-1 * input$MMSplice)], data[as.numeric(data$mmsplice_delta_logit_psi) > input$MMSplice] )
     }
+     
     #if (input$Pangolin != "All") {
       #data <- subset(data, Pangolin_score_change_1 > input$Pangolin | Pangolin_score_change_2 > input$Pangolin)
     #}
+    
     if (input$SQUIRLS != "All") {
       data <- subset(data, SQUIRLS > input$SQUIRLS)
     }
+    
     data
   }))
 
