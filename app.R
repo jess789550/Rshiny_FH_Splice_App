@@ -2,6 +2,7 @@
 library(shiny)
 library(DT)
 library(shinydashboard) # for box()
+library(ggplot2)
 
 # Define UI: https://shiny.posit.co/r/gallery/widgets/basic-datatable/
 ui <- fluidPage(
@@ -33,7 +34,11 @@ ui <- fluidPage(
       sliderInput("MMSplice", "MMSplice cutoff:", min = 0, max = 2, value = 0.5, step = 0.5),
 
       # Choose Pangolin cutoff
-      # sliderInput("Pangolin", "Pangolin cutoff:", min = 0, max = 1, value = 0.2, step = 0.1)
+      #sliderInput("Pangolin", "Pangolin cutoff:", min = 0, max = 1, value = 0.2, step = 0.1),
+      
+      # Choose what to plot
+      selectInput("plot", "FDR plot:", choices = c("SpliceAI_DS_AG", "SpliceAI_DS_AL", "SpliceAI_DS_DG", "SpliceAI_DS_DL", "MaxEntScan_alt", "SQUIRLS", "mmsplice_delta_logit_psi"))
+      
   ),
 
   # Create a main panel to display table of results
@@ -41,11 +46,14 @@ ui <- fluidPage(
 
     # Table of splice variants and prediction scores
     box(style='width:1000px;overflow-x: scroll; overflow-y: scroll;',
-    DT::dataTableOutput("splice_table") #,
-    )
+    DT::dataTableOutput("splice_table")
+    ),
     
     # Table of performance metrics
-    # DT::dataTableOutput("metrics_table")
+    DT::dataTableOutput("metrics_table"),
+     
+    # FP-FN trade-off plot 
+    plotOutput(outputId = "main_plot", height = "300px")
   )
 )
 
@@ -89,6 +97,38 @@ server <- function(input, output) {
     
     data
   }))
+
+   # Performance metrics TP, FP, FDR = FP / (FP + TP)
+   output$metrics_table <- DT::renderDataTable(DT::datatable({
+    
+    # Get metrics
+    TP <- nrow(data[data$Type == "TP",])
+    FP <- nrow(data[data$Type == "FP",])
+    FDR <- FP / (FP + TP)
+         
+    # create matrix with 4 columns and 4 rows
+    table= matrix(c(TP, FP, FDR), ncol=3, byrow=TRUE)
+      
+    # specify the column names and row names of matrix
+    colnames(table) <- c('TP','FP','FDR')
+ 
+    # assign to table
+    metrics=as.table(table)
+     
+    metrics
+  }))
+    
+    # FP-FN trade-off plot https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot    https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
+    output$main_plot <- renderPlot({
+        # Get data
+        column <- input$plot
+        TP_dat <- data[data$Type == 'TP', ]
+        FP_dat <- data[data$Type == 'FP', ]
+         
+        # Plot
+        plot(density(TP_dat$column))
+        lines(density(FP_dat$column))
+  })
 
 }
 
