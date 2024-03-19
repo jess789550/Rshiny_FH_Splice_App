@@ -48,16 +48,24 @@ ui <- fluidPage(
     
     # Add description from README.md
     uiOutput('Description'),
+    br(),
     
     # Table of splice variants and prediction scores
+    h2("Table of splice variants and prediction scores"),
     box(style='width:1000px;overflow-x: scroll; overflow-y: scroll;',
         DT::dataTableOutput("splice_table")
     ),
+    br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(),
+    br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(),
+    br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(),
     
     # Table of performance metrics
+    h2("Table of performance metrics"),
     DT::dataTableOutput("metrics_table"),
+    br(),
     
     # FP-FN trade-off plot 
+    h2("FP-FN trade-off plot"),
     plotOutput(outputId = "main_plot", height = "300px")
   )
 )
