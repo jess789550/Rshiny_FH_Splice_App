@@ -144,15 +144,41 @@ server <- function(input, output) {
       FP_dat <- data[data$Type == 'FP', ]
       
       # Plot input
-      column <- input$plot
+      plot_func <- function(column) {
+        renderPlot({
+          # plot(density(TP_dat[,column][!is.na(TP_dat[,column])]))
+          # lines(density(FP_dat[,column][!is.na(FP_dat[,column])]))
+          column <- sym(column)
+          ggplot(data, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
+        })
+      }
+        #column <- input$plot
       
       # FP-FN trade-off plot https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot    https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
-      output$main_plot <- renderPlot({
-        plot(density(TP_dat[,column][!is.na(TP_dat[,column])]))
-        lines(density(FP_dat[,column][!is.na(FP_dat[,column])]))
-      })
+      output$main_plot <- tryCatch(
+        {
+          plot_func(input$plot)
+        },
+        error = function(cond) {
+          message("Sorry the FP-FN trade-off plot cannot be produced.")
+          message("This could be due to no TP/FP in your selection.")
+          message("Here's the original error message:")
+          message(conditionMessage(cond))
+          # Choose a return value in case of error
+          NA
+        },
+        warning = function(cond) {
+          message("Sorry the FP-FN trade-off plot cannot be produced.")
+          message("This could be due to no TP/FP in your selection.")
+          message("Here's the original warning message:")
+          message(conditionMessage(cond))
+          # Choose a return value in case of warning
+          NULL
+        }
+      )
     })
   }
   
   # Run app
   shinyApp(ui = ui, server = server)
+  
