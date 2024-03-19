@@ -1,7 +1,7 @@
 # FH splice app Description
 This app allows the user to view splice site prediction results from SpliceAI, MaxEntScan, GeneSplicer, MMSplice, Pangolin, and SQUIRLS.
 
-The user can adjust cutoff thresholds for each tool (future work: show how this affects the precision and recall rate of each tool).
+The user can adjust cutoff thresholds for each tool and will show how this affects the false discovery rate.
 
 Results for the following worklists can be viewed:
 - 2004442 (32 samples containing controls and GIAB samples, 3 positive)
