@@ -37,7 +37,8 @@ ui <- fluidPage(
     #sliderInput("Pangolin", "Pangolin cutoff:", min = 0, max = 1, value = 0.2, step = 0.1),
     
     # Choose what to plot
-    selectInput("plot", "FDR plot:", choices = c("SpliceAI_DS_AG", "SpliceAI_DS_AL", "SpliceAI_DS_DG", "SpliceAI_DS_DL", "MaxEntScan_alt", "SQUIRLS", "mmsplice_delta_logit_psi")),
+    selectInput("plot", "FDR plot:", choices = c("SpliceAI_DS_AG", "SpliceAI_DS_AL", "SpliceAI_DS_DG", 
+                                                 "SpliceAI_DS_DL", "MaxEntScan_alt", "SQUIRLS", "mmsplice_delta_logit_psi")),
     
     # Add button for user to press to initiate run
     actionButton(inputId = "Submit", label = "Submit")
@@ -50,23 +51,21 @@ ui <- fluidPage(
     uiOutput('Description'),
     br(),
     
-    # Table of splice variants and prediction scores
-    h2("Table of splice variants and prediction scores"),
-    box(style='width:1000px;overflow-x: scroll; overflow-y: scroll;',
-        DT::dataTableOutput("splice_table")
-    ),
-    br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(),
-    br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(),
-    br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), br(),
-    
     # Table of performance metrics
     h2("Table of performance metrics"),
     DT::dataTableOutput("metrics_table"),
     br(),
     
-    # FP-FN trade-off plot 
-    h2("FP-FN trade-off plot"),
-    plotOutput(outputId = "main_plot", height = "300px")
+    # TP-FP trade-off plot 
+    h2("TP-FP trade-off plot"),
+    plotOutput(outputId = "main_plot", height = "300px"),
+    
+    # Table of splice variants and prediction scores
+    h2("Table of splice variants and prediction scores"),
+    box(style='width:1000px;overflow-x: scroll; overflow-y: scroll;',
+        DT::dataTableOutput("splice_table")
+    ),
+    br()
   )
 )
 
@@ -95,11 +94,14 @@ server <- function(input, output) {
       data <- read.csv(file)
       
       if (input$SpliceAI != 0) {
-        data <- subset(data, SpliceAI_DS_AG > input$SpliceAI | SpliceAI_DS_AL > input$SpliceAI | SpliceAI_DS_DG > input$SpliceAI | SpliceAI_DS_DL > input$SpliceAI)
+        data <- subset(data, SpliceAI_DS_AG > input$SpliceAI | SpliceAI_DS_AL > input$SpliceAI | 
+                         SpliceAI_DS_DG > input$SpliceAI | SpliceAI_DS_DL > input$SpliceAI)
       }
       
       if (input$MES != 0) {
-        data <- subset(data, (MaxEntScan_diff < 0 & MaxEntScan_alt > input$MES) | (MaxEntScan_diff > 0 & MaxEntScan_alt < input$MES))
+        dataFiltered<-data[which(data$MaxEntScan_diff!='-'),]
+        data <- subset(dataFiltered, (MaxEntScan_diff < 0 & MaxEntScan_alt > input$MES) | 
+                         (MaxEntScan_diff > 0 & MaxEntScan_alt < input$MES))
       }
       
       # if (input$GeneSplicer != "None") {
@@ -111,7 +113,9 @@ server <- function(input, output) {
       #}
       
       if (input$MMSplice != 0) {
-        data <- rbind(data[as.numeric(data$mmsplice_delta_logit_psi) < (-1 * input$MMSplice),], data[as.numeric(data$mmsplice_delta_logit_psi) > input$MMSplice,])
+        dataFiltered<-data[which(data$mmsplice_delta_logit_psi!='-'),]
+        data <- rbind(data[as.numeric(dataFiltered$mmsplice_delta_logit_psi) < (-1 * input$MMSplice),], 
+                      data[as.numeric(dataFiltered$mmsplice_delta_logit_psi) > input$MMSplice,])
       }
       
       #if (input$Pangolin != 0) {
@@ -121,6 +125,7 @@ server <- function(input, output) {
       if (input$SQUIRLS != 0) {
         data <- subset(data, SQUIRLS > input$SQUIRLS)
       }
+      dataDebug<<-data
     
       # Show table of filtered data
       output$splice_table <- DT::renderDataTable(DT::datatable({
@@ -145,11 +150,12 @@ server <- function(input, output) {
         metrics=as.data.frame(table)
         
         metrics
+        metricsDebug<<-metrics
       }))
       
       # Get data
-      TP_dat <- data[data$Type == 'TP', ]
-      FP_dat <- data[data$Type == 'FP', ]
+      #TP_dat <- data[data$Type == 'TP', ]
+      #FP_dat <- data[data$Type == 'FP', ]
       
       # Plot input
       plot_func <- function(column) {
@@ -157,18 +163,28 @@ server <- function(input, output) {
           # plot(density(TP_dat[,column][!is.na(TP_dat[,column])]))
           # lines(density(FP_dat[,column][!is.na(FP_dat[,column])]))
           column <- sym(column)
-          ggplot(data, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
+          if (column == "MaxEntScan_alt") {
+            dataFiltered<-data[which(data$MaxEntScan_diff!='-'),]
+            ggplot(dataFiltered, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
+          } else if (column =="mmsplice_delta_logit_psi") {
+            dataFiltered<-data[which(data$mmsplice_delta_logit_psi!='-'),]
+            ggplot(dataFiltered, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
+          } else{
+            ggplot(data, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
+          }
         })
       }
         #column <- input$plot
       
-      # FP-FN trade-off plot https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot    https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
+      # TP-FP trade-off plot 
+      # https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot   
+      # https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
       output$main_plot <- tryCatch(
         {
           plot_func(input$plot)
         },
         error = function(cond) {
-          message("Sorry the FP-FN trade-off plot cannot be produced.")
+          message("Sorry the TP-FP trade-off plot cannot be produced.")
           message("This could be due to no TP/FP in your selection.")
           message("Here's the original error message:")
           message(conditionMessage(cond))
@@ -176,7 +192,7 @@ server <- function(input, output) {
           NA
         },
         warning = function(cond) {
-          message("Sorry the FP-FN trade-off plot cannot be produced.")
+          message("Sorry the TP-FP trade-off plot cannot be produced.")
           message("This could be due to no TP/FP in your selection.")
           message("Here's the original warning message:")
           message(conditionMessage(cond))
