@@ -29,5 +29,7 @@ runApp("splice")
 # View app online
 https://jessicakan.shinyapps.io/splice/ 
 
+Use the sliders to filter the data then click *Submit*.
+
 # Author
 Jessica Kan
