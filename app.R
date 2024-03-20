@@ -93,23 +93,25 @@ server <- function(input, output) {
   # On click of button
   observeEvent(input$Submit, {
       
-      # Filter data based on selections
+      # Read worklist splice site prediction results
       file <- paste(input$worklist, ".csv", sep="")
-      
       data <- read.csv(file)
       
+      # Filter SpliceAI results
       if (input$SpliceAI != 0) {
         data <- subset(data, SpliceAI_DS_AG > input$SpliceAI | SpliceAI_DS_AL > input$SpliceAI | 
                          SpliceAI_DS_DG > input$SpliceAI | SpliceAI_DS_DL > input$SpliceAI)
       }
       
+      # Filter MES results
+      dataFilteredMES<-data[which(data$MaxEntScan_diff!='-'),]
+      dataFilteredMES$MaxEntScan_alt<-as.numeric(dataFilteredMES$MaxEntScan_alt)
+      
       if (input$MES == "Low") {
-        dataFiltered<-data[which(data$MaxEntScan_diff!='-'),]
-        data <- subset(dataFiltered, (MaxEntScan_diff < 0 & MaxEntScan_alt > 6.2) | 
+        data <- subset(dataFilteredMES, (MaxEntScan_diff < 0 & MaxEntScan_alt > 6.2) | 
                          (MaxEntScan_diff > 0 & MaxEntScan_alt < 8.5))
       } else if (input$MES == "High") {
-        dataFiltered<-data[which(data$MaxEntScan_diff!='-'),]
-        data <- subset(dataFiltered, (MaxEntScan_diff < 0 & MaxEntScan_alt > 8.5) | 
+        data <- subset(dataFilteredMES, (MaxEntScan_diff < 0 & MaxEntScan_alt > 8.5) | 
                          (MaxEntScan_diff > 0 & MaxEntScan_alt < 6.2))
       }
       
@@ -121,19 +123,23 @@ server <- function(input, output) {
       #data <- subset(data, (mmsplice_delta_logit_psi > input$MMSplice) | (mmsplice_delta_logit_psi < (input$MMSplice * -1)))
       #}
       
+      # Filter MMSplice results
       if (input$MMSplice != 0) {
-        dataFiltered<-data[which(data$mmsplice_delta_logit_psi!='-'),]
-        data <- rbind(data[as.numeric(dataFiltered$mmsplice_delta_logit_psi) < (-1 * input$MMSplice),], 
-                      data[as.numeric(dataFiltered$mmsplice_delta_logit_psi) > input$MMSplice,])
+        dataFilteredMMSplice<-data[which(data$mmsplice_delta_logit_psi!='-'),]
+        dataFilteredMMSplice$mmsplice_delta_logit_psi<-as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi)
+        data <- rbind(data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) < (-1 * input$MMSplice),], 
+                      data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) > input$MMSplice,])
       }
       
       #if (input$Pangolin != 0) {
       #data <- subset(data, Pangolin_score_change_1 > input$Pangolin | Pangolin_score_change_2 > input$Pangolin)
       #}
       
+      # Filter SQUILRS results
       if (input$SQUIRLS != 0) {
         data <- subset(data, SQUIRLS > input$SQUIRLS)
       }
+      
       dataDebug<<-data
     
       # Show table of filtered data
@@ -173,11 +179,13 @@ server <- function(input, output) {
           # lines(density(FP_dat[,column][!is.na(FP_dat[,column])]))
           column <- sym(column)
           if (column == "MaxEntScan_alt") {
-            dataFiltered<-data[which(data$MaxEntScan_alt!='-'),]
-            ggplot(dataFiltered, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
+            dataFilteredMES<-data[which(data$MaxEntScan_diff!='-'),]
+            dataFilteredMES$MaxEntScan_alt<-as.numeric(dataFilteredMES$MaxEntScan_alt)
+            ggplot(dataFilteredMES, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
           } else if (column =="mmsplice_delta_logit_psi") {
-            dataFiltered<-data[which(data$mmsplice_delta_logit_psi!='-'),]
-            ggplot(dataFiltered, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
+            dataFilteredMMSplice<-data[which(data$mmsplice_delta_logit_psi!='-'),]
+            dataFilteredMMSplice$mmsplice_delta_logit_psi<-as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi)
+            ggplot(dataFilteredMMSplice, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
           } else{
             ggplot(data, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
           }
