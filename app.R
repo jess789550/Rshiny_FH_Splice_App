@@ -22,13 +22,14 @@ ui <- fluidPage(
     sliderInput("SpliceAI", "SpliceAI cutoff:", min = 0, max = 1, value = 0.3, step = 0.1),
     
     # Choose MES cutoff
-    sliderInput("MES", "MES cutoff:", min = 0, max = 10, value = 6.2, step = 0.1),
-    
+    # sliderInput("MES", "MES cutoff:", min = 0, max = 10, value = 6.2, step = 0.1),
+    selectInput("MES", "MES cutoff:", choices = c("Low", "None", "High")),
+                
     # Choose GeneSplicer cutoff
     # selectInput("GeneSplicer", "GeneSplicer cutoff:", choices = c("50", "100", "200", "None")),
     
     # Choose SQUIRLS cutoff
-    sliderInput("SQUIRLS", "SQUIRLS cutoff:", min = 0, max = 1, value = 0.9, step = 0.1),
+    sliderInput("SQUIRLS", "SQUIRLS cutoff:", min = 0, max = 1, value = 0.5, step = 0.1),
     
     # Choose MMSplice cutoff
     sliderInput("MMSplice", "MMSplice cutoff:", min = 0, max = 2, value = 0.5, step = 0.5),
@@ -47,26 +48,29 @@ ui <- fluidPage(
   # Create a main panel to display table of results
   mainPanel(
     
-    # Add description from README.md
-    uiOutput('Description'),
-    br(),
-    
-    # Table of performance metrics
-    h2("Table of performance metrics"),
-    DT::dataTableOutput("metrics_table"),
-    br(),
-    
-    # TP-FP trade-off plot 
-    h2("TP-FP trade-off plot"),
-    plotOutput(outputId = "main_plot", height = "300px"),
-    
-    # Table of splice variants and prediction scores
-    h2("Table of splice variants and prediction scores"),
-    box(style='width:1000px;overflow-x: scroll; overflow-y: scroll;',
-        DT::dataTableOutput("splice_table")
-    ),
-    br()
-  )
+    tabsetPanel(type = "tabs",
+                tabPanel("Description" ,
+                         # Add description from README.md
+                         uiOutput('Description'),
+                         ),
+                tabPanel("Splice variants and prediction scores",
+                         # Table of splice variants and prediction scores
+                         h2("Table of splice variants and prediction scores"),
+                         box(style='width:1000px;overflow-x: scroll; overflow-y: scroll;',
+                             DT::dataTableOutput("splice_table"),)
+                         ),
+                tabPanel("Performance metrics",
+                         # Table of performance metrics
+                         h2("Table of performance metrics"),
+                         DT::dataTableOutput("metrics_table")
+                         ),
+                tabPanel("TP-FP trade-off plot",
+                         # TP-FP trade-off plot 
+                         h2("TP-FP trade-off plot"),
+                         plotOutput(outputId = "main_plot", height = "300px")
+                         )
+                )
+            )
 )
 
 # Define server
@@ -86,6 +90,7 @@ server <- function(input, output) {
     return(replacedText)
   })
   
+  # On click of button
   observeEvent(input$Submit, {
       
       # Filter data based on selections
@@ -98,10 +103,14 @@ server <- function(input, output) {
                          SpliceAI_DS_DG > input$SpliceAI | SpliceAI_DS_DL > input$SpliceAI)
       }
       
-      if (input$MES != 0) {
+      if (input$MES == "Low") {
         dataFiltered<-data[which(data$MaxEntScan_diff!='-'),]
-        data <- subset(dataFiltered, (MaxEntScan_diff < 0 & MaxEntScan_alt > input$MES) | 
-                         (MaxEntScan_diff > 0 & MaxEntScan_alt < input$MES))
+        data <- subset(dataFiltered, (MaxEntScan_diff < 0 & MaxEntScan_alt > 6.2) | 
+                         (MaxEntScan_diff > 0 & MaxEntScan_alt < 8.5))
+      } else if (input$MES == "High") {
+        dataFiltered<-data[which(data$MaxEntScan_diff!='-'),]
+        data <- subset(dataFiltered, (MaxEntScan_diff < 0 & MaxEntScan_alt > 8.5) | 
+                         (MaxEntScan_diff > 0 & MaxEntScan_alt < 6.2))
       }
       
       # if (input$GeneSplicer != "None") {
@@ -164,7 +173,7 @@ server <- function(input, output) {
           # lines(density(FP_dat[,column][!is.na(FP_dat[,column])]))
           column <- sym(column)
           if (column == "MaxEntScan_alt") {
-            dataFiltered<-data[which(data$MaxEntScan_diff!='-'),]
+            dataFiltered<-data[which(data$MaxEntScan_alt!='-'),]
             ggplot(dataFiltered, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
           } else if (column =="mmsplice_delta_logit_psi") {
             dataFiltered<-data[which(data$mmsplice_delta_logit_psi!='-'),]
