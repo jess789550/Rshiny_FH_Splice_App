@@ -3,6 +3,8 @@ This app allows the user to view splice site prediction results from SpliceAI, M
 
 The user can adjust cutoff thresholds for each tool and the app will show how this affects the false discovery rate.
 
+Default settings are the optimum values for this dataset.
+
 Results for the following worklists can be viewed:
 - 2004442 (32 samples containing controls and GIAB samples, 3 positive)
 - 2005265 (similar to above)
