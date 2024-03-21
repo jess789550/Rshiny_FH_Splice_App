@@ -1,15 +1,15 @@
-# Load libraries
+##### Load libraries ######
 library(shiny)
 library(DT)
 library(shinydashboard) # for box()
 library(ggplot2)
 
-# Define UI: https://shiny.posit.co/r/gallery/widgets/basic-datatable/
+##### Define UI: https://shiny.posit.co/r/gallery/widgets/basic-datatable/ #####
 ui <- fluidPage(
-  # Title
+  ### Title ##
   titlePanel("FH Splice Site Prediction Results"),
   
-  # Create a sidebar panel in the UI for adjusting parameters
+  ### Create a sidebar panel in the UI for adjusting parameters ###
   sidebarPanel(
     
     # Allow user to select worklist
@@ -45,7 +45,7 @@ ui <- fluidPage(
     actionButton(inputId = "Submit", label = "Submit")
   ),
   
-  # Create a main panel to display table of results
+  ### Create a main panel to display table of results ###
   mainPanel(
     
     tabsetPanel(type = "tabs",
@@ -56,7 +56,7 @@ ui <- fluidPage(
                 tabPanel("Splice variants and prediction scores",
                          # Table of splice variants and prediction scores
                          h2("Table of splice variants and prediction scores"),
-                         box(style='width:1000px;overflow-x: scroll; overflow-y: scroll;',
+                         box(style='width:800px;overflow-x: scroll; overflow-y: scroll;',
                              DT::dataTableOutput("splice_table"),)
                          ),
                 tabPanel("Performance metrics",
@@ -66,17 +66,20 @@ ui <- fluidPage(
                          ),
                 tabPanel("TP-FP trade-off plot",
                          # TP-FP trade-off plot 
-                         h2("TP-FP trade-off plot"),
-                         plotOutput(outputId = "main_plot", height = "300px")
+                         h2("TP-FP trade-off plot for all data"),
+                         plotOutput(outputId = "main_plot", height = "300px"),
+                         br(),
+                         h2("TP-FP trade-off plot for filtered data"),
+                         plotOutput(outputId = "filtered_plot", height = "300px")
                          )
                 )
             )
 )
 
-# Define server
+##### Define server #####
 server <- function(input, output) {
   
-  # Get description from README.md
+  ### Get description from README.md ###
   output$Description <- renderUI({
     rawText <- readLines('README.md') # get raw text
     
@@ -90,12 +93,13 @@ server <- function(input, output) {
     return(replacedText)
   })
   
-  # On click of button
+  ### On click of button ###
   observeEvent(input$Submit, {
       
       # Read worklist splice site prediction results
       file <- paste(input$worklist, ".csv", sep="")
-      data <- read.csv(file)
+      original_data <- read.csv(file)  # need original_data downstream
+      data <- original_data  # for filtering
       
       # Filter SpliceAI results
       if (input$SpliceAI != 0) {
@@ -135,19 +139,19 @@ server <- function(input, output) {
       #data <- subset(data, Pangolin_score_change_1 > input$Pangolin | Pangolin_score_change_2 > input$Pangolin)
       #}
       
-      # Filter SQUILRS results
+      # Filter SQUIRLS results
       if (input$SQUIRLS != 0) {
         data <- subset(data, SQUIRLS > input$SQUIRLS)
       }
       
       dataDebug<<-data
     
-      # Show table of filtered data
+      ### Show table of filtered data ###
       output$splice_table <- DT::renderDataTable(DT::datatable({
         data
       }))
       
-      # Performance metrics TP, FP, FDR = FP / (FP + TP)
+      ### Performance metrics TP, FP, FDR = FP / (FP + TP) ###
       output$metrics_table <- DT::renderDataTable(DT::datatable({
         
         # Get metrics
@@ -172,33 +176,56 @@ server <- function(input, output) {
       #TP_dat <- data[data$Type == 'TP', ]
       #FP_dat <- data[data$Type == 'FP', ]
       
-      # Plot input
-      plot_func <- function(column) {
+      # Plot input function
+      # column <- input$plot
+      plot_func <- function(dataset, column) {
         renderPlot({
           # plot(density(TP_dat[,column][!is.na(TP_dat[,column])]))
           # lines(density(FP_dat[,column][!is.na(FP_dat[,column])]))
           column <- sym(column)
           if (column == "MaxEntScan_alt") {
-            dataFilteredMES<-data[which(data$MaxEntScan_diff!='-'),]
+            dataFilteredMES<-dataset[which(dataset$MaxEntScan_diff!='-'),]
             dataFilteredMES$MaxEntScan_alt<-as.numeric(dataFilteredMES$MaxEntScan_alt)
             ggplot(dataFilteredMES, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
           } else if (column =="mmsplice_delta_logit_psi") {
-            dataFilteredMMSplice<-data[which(data$mmsplice_delta_logit_psi!='-'),]
+            dataFilteredMMSplice<-dataset[which(dataset$mmsplice_delta_logit_psi!='-'),]
             dataFilteredMMSplice$mmsplice_delta_logit_psi<-as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi)
             ggplot(dataFilteredMMSplice, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
           } else{
-            ggplot(data, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
+            ggplot(dataset, aes(x = !!column, fill = Type)) + geom_density(alpha = 0.5)
           }
         })
       }
-        #column <- input$plot
       
-      # TP-FP trade-off plot 
-      # https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot   
-      # https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
+      ### TP-FP trade-off plot ###
       output$main_plot <- tryCatch(
         {
-          plot_func(input$plot)
+          plot_func(original_data, input$plot)
+        },
+        error = function(cond) {
+          message("Sorry the TP-FP trade-off plot cannot be produced.")
+          message("This could be due to no TP/FP in your selection.")
+          message("Here's the original error message:")
+          message(conditionMessage(cond))
+          # Choose a return value in case of error
+          NA
+        },
+        warning = function(cond) {
+          message("Sorry the TP-FP trade-off plot cannot be produced.")
+          message("This could be due to no TP/FP in your selection.")
+          message("Here's the original warning message:")
+          message(conditionMessage(cond))
+          # Choose a return value in case of warning
+          NULL
+        }
+      )
+      
+      ### TP-FP trade-off plot filtered ### 
+      # https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot   
+      # https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
+      output$filtered_plot <- tryCatch(
+        {
+          plot_func(data, input$plot)
         },
         error = function(cond) {
           message("Sorry the TP-FP trade-off plot cannot be produced.")
@@ -220,6 +247,10 @@ server <- function(input, output) {
     })
   }
   
-  # Run app
-  shinyApp(ui = ui, server = server)
+##### Run app #####
+shinyApp(ui = ui, server = server)
+
+##### Notes for Deployment #####
+# library(rsconnect)
+# rsconnect::deployApp('/data/jess_tmp/fh/Rshiny/splice') 
   
