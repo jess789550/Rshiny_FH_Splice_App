@@ -37,6 +37,8 @@ Other tools considered were either of low recall (GeneSplicer), too slow (Splice
 # How to use
 Use sliders to filter data then press "submit".
 
+NOTE: Please press "submit" again after using splice variant table column filters.
+
 Navigate through the different tabs to see the results.
 
 
