@@ -37,6 +37,9 @@ ui <- fluidPage(
     # Choose Pangolin cutoff
     #sliderInput("Pangolin", "Pangolin cutoff:", min = 0, max = 1, value = 0.2, step = 0.1),
     
+    # Choose gnomAD cutoff
+    sliderInput("gnomAD", "gnomAD allele frequency:", min = 0, max = 1, value = 0, step = 0.1),
+    
     # Choose what to plot
     selectInput("plot", "FDR plot:", choices = c("SpliceAI_DS_AG", "SpliceAI_DS_AL", "SpliceAI_DS_DG", 
                                                  "SpliceAI_DS_DL", "MaxEntScan_alt", "SQUIRLS", "mmsplice_delta_logit_psi")),
@@ -60,114 +63,97 @@ ui <- fluidPage(
                            column(4,
                                   selectInput("col_file_id",
                                               "File:",
-                                              c("All",
-                                                unique(as.character(data$file_id))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_CHROM",
                                               "Chromosome:",
-                                              c("All",
-                                                unique(as.character(data$CHROM))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_POS",
                                               "Position:",
-                                              c("All",
-                                                unique(as.character(data$POS))))
+                                              c("All"))
                            )
                          ),
                          fluidRow(
                            column(4,
                                   selectInput("col_REF",
                                               "Reference allele:",
-                                              c("All",
-                                                unique(as.character(data$REF))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_ALT",
                                               "Alternative allele:",
-                                              c("All",
-                                                unique(as.character(data$ALT))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_SYMBOL",
                                               "Gene symbol:",
-                                              c("All",
-                                                unique(as.character(data$SYMBOL))))
+                                              c("All"))
                            )
                          ),
                          fluidRow(
                            column(4,
                                   selectInput("col_HGVSc",
                                               "HGVSc nomenclature",
-                                              c("All",
-                                                unique(as.character(data$HGVSc))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_gnomAD_AF",
                                               "gnomAD allele frequency:",
-                                              c("All",
-                                                unique(as.character(data$gnomAD_AF))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_SpliceAI_DS_AG",
                                               "SpliceAI Acceptor Gain:",
-                                              c("All",
-                                                unique(as.character(data$SpliceAI_DS_AG))))
+                                              c("All"))
                            )
                          ),
                          fluidRow(
                            column(4,
                                   selectInput("col_SpliceAI_DS_AL",
                                               "SpliceAI Acceptor Loss:",
-                                              c("All",
-                                                unique(as.character(data$SpliceAI_DS_AL))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_SpliceAI_DS_DG",
                                               "SpliceAI Donor Gain:",
-                                              c("All",
-                                                unique(as.character(data$SpliceAI_DS_DG))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_SpliceAI_DS_DL",
                                               "SpliceAI Donor Loss:",
-                                              c("All",
-                                                unique(as.character(data$SpliceAI_DS_DL))))
+                                              c("All"))
                            )
                          ),
                          fluidRow(
                            column(4,
                                   selectInput("col_mmsplice_delta_logit_psi",
                                               "MMSplice:",
-                                              c("All",
-                                                unique(as.character(data$mmsplice_delta_logit_psi))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_MaxEntScan_alt",
                                               "MES alt:",
-                                              c("All",
-                                                unique(as.character(data$MaxEntScan_alt))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_MaxEntScan_diff",
                                               "MES diff:",
-                                              c("All",
-                                                unique(as.character(data$MaxEntScan_diff))))
+                                              c("All"))
                            )
                          ),
                          fluidRow(
                            column(4,
                                   selectInput("col_SQUIRLS",
                                               "SQUIRLS:",
-                                              c("All",
-                                                unique(as.character(data$SQUIRLS))))
+                                              c("All"))
                            ),
                            column(4,
                                   selectInput("col_Type",
                                               "True positive or false positive:",
-                                              c("All",
-                                                unique(as.character(data$Type))))
+                                              c("All"))
                            )
                          ),
                          box(style='width:800px;overflow-x: scroll; overflow-y: scroll;',
@@ -191,7 +177,7 @@ ui <- fluidPage(
 )
 
 ##### Define server #####
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   ### Get description from README.md ###
   output$Description <- renderUI({
@@ -214,6 +200,59 @@ server <- function(input, output) {
     file <- paste(input$worklist, ".csv", sep="")
     original_data <- read.csv(file)  # need original_data downstream
     data <- original_data  # for filtering
+    
+    # Update column filters 
+    # https://stackoverflow.com/questions/46346917/update-shinys-selectinput-dropdown-with-new-values-after-uploading-new-data-u
+    updateSelectInput(session, "col_file_id",
+                      choices = c("All", unique(as.character(data$file_id))))
+    
+    updateSelectInput(session, "col_CHROM",
+                      choices = c("All", unique(as.character(data$CHROM))))
+    
+    updateSelectInput(session, "col_POS",
+                      choices = c("All", unique(as.character(data$POS))))
+    
+    updateSelectInput(session, "col_REF",
+                      choices = c("All", unique(as.character(data$REF))))
+    
+    updateSelectInput(session, "col_ALT",
+                      choices = c("All", unique(as.character(data$ALT))))
+    
+    updateSelectInput(session, "col_SYMBOL",
+                      choices = c("All", unique(as.character(data$SYMBOL))))
+    
+    updateSelectInput(session, "col_HGVSc",
+                      choices = c("All", unique(as.character(data$HGVSc))))
+    
+    updateSelectInput(session, "col_gnomAD_AF",
+                      choices = c("All", unique(as.character(data$gnomAD_AF))))
+    
+    updateSelectInput(session, "col_SpliceAI_DS_AG",
+                      choices = c("All", unique(as.character(data$SpliceAI_DS_AG))))
+    
+    updateSelectInput(session, "col_SpliceAI_DS_AL",
+                      choices = c("All", unique(as.character(data$SpliceAI_DS_AL))))
+    
+    updateSelectInput(session, "col_SpliceAI_DS_DG",
+                      choices = c("All", unique(as.character(data$SpliceAI_DS_DG))))
+    
+    updateSelectInput(session, "col_SpliceAI_DS_DL",
+                      choices = c("All", unique(as.character(data$SpliceAI_DS_DL))))
+    
+    updateSelectInput(session, "col_mmsplice_delta_logit_psi",
+                      choices = c("All", unique(as.character(data$mmsplice_delta_logit_psi))))
+    
+    updateSelectInput(session, "col_MaxEntScan_alt",
+                      choices = c("All", unique(as.character(data$MaxEntScan_alt))))
+    
+    updateSelectInput(session, "col_MaxEntScan_diff",
+                      choices = c("All", unique(as.character(data$MaxEntScan_diff))))
+    
+    updateSelectInput(session, "col_SQUIRLS",
+                      choices = c("All", unique(as.character(data$SQUIRLS))))
+    
+    updateSelectInput(session, "col_Type",
+                      choices = c("All", unique(as.character(data$Type))))
     
     # Filter by column values
     if (input$col_file_id != "All") {
@@ -312,8 +351,8 @@ server <- function(input, output) {
     
     # Filter MMSplice results
     if (input$MMSplice != 0) {
-      dataFilteredMMSplice<-data[which(data$mmsplice_delta_logit_psi!='-'),]
-      dataFilteredMMSplice$mmsplice_delta_logit_psi<-as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi)
+      dataFilteredMMSplice <- data[which(data$mmsplice_delta_logit_psi!='-'),]
+      dataFilteredMMSplice$mmsplice_delta_logit_psi <- as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi)
       data <- rbind(data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) < (-1 * input$MMSplice),], 
                     data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) > input$MMSplice,])
     }
@@ -325,6 +364,13 @@ server <- function(input, output) {
     # Filter SQUIRLS results
     if (input$SQUIRLS != 0) {
       data <- subset(data, SQUIRLS > input$SQUIRLS)
+    }
+    
+    # Filter gnomAD allele frequency
+    if (input$gnomAD != 0) {
+      dataFilteredgnomAD <- data[which(data$gnomAD_AF!='-'),]
+      dataFilteredgnomAD$gnomAD_AF <- as.numeric(dataFilteredgnomAD$gnomAD_AF)
+      data <- subset(dataFilteredgnomAD, gnomAD_AF < input$gnomAD)
     }
     
     dataDebug<<-data
