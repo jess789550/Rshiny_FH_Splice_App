@@ -1,5 +1,5 @@
 # FH splice app Description
-This app allows the user to view splice site prediction results from SpliceAI, MaxEntScan, MMSplice, and SQUIRLS.
+This app allows the user to view splice site prediction results from SpliceAI, MaxEntScan, MMSplice, GeneSplicer, and SQUIRLS.
 
 The user can adjust cutoff thresholds for each tool and the app will show how this affects the false discovery rate.
 
@@ -30,12 +30,15 @@ The SQUIRLS score denotes a probability of the variant being splice-altering ran
 
 Delta_logit_psi is the main score is predicted by MMSplice, which shows the effect of the variant on the inclusion level (PSI percent spliced in) of the exon. 0 is the most lenient threshold and 2 is the strictest.
 
-Other tools considered were either of low recall (GeneSplicer), too slow (Spliceator, DSSP, Pangolin, DNABERT) or were deprecated (KipoiSplice, PresPSI-SVR, Splice2Deep, S-CAP).
+Although GeneSplicer has low recall, it has been added at a clinical scientist's request. A context of 100 base pairs (default) was used which means is the amount of sequence included either side of the variant.
 
+Other tools considered were either too slow (Spliceator, DSSP, Pangolin, DNABERT) or were deprecated (KipoiSplice, PresPSI-SVR, Splice2Deep, S-CAP).
+
+The gnomAD allele frequency can be filter to less than or equal to 0, 0.0001, 0.0002 (PM2), 0.002 (BS1), 0.005 (BA1), or None (no filter).
 
 
 # How to use
-Use sliders to filter data then press "submit".
+Use sliders to filter data then press "submit". 
 
 NOTE: Please press "submit" again after using splice variant table column filters.
 
@@ -74,3 +77,5 @@ Cheng, J., Nguyen, T. Y. D., Cygan, K. J., Çelik, M. H., Fairbrother, W. G., Av
 Danis, D., Jacobsen, J. O. B., Carmody, L. C., Gargano, M. A., McMurry, J. A., Hegde, A., Haendel, M. A., Valentini, G., Smedley, D. and Robinson, P. N. (2021) 'Interpretable prioritization of splice variants in diagnostic next-generation sequencing', Am J Hum Genet, 108(11), pp. 2205.
 
 Shamsani, J.,, Kazakoff, S.H.,, Armean, I.M.,, McLaren, W.,, Parsons, M.T.,, Thompson, B.A.,, O’Mara, T.A.,, Hunt, S.E.,, Waddell, N., and Spurdle, A.B., 2018. A plugin for the Ensembl variant effect predictor that uses MaxEntScan to predict variant spliceogenicity. Bioinformatics, 35(13), pp.2315–2317. 
+
+Pertea, M., Lin, X. and Salzberg, S. L. (2001) 'GeneSplicer: a new computational method for splice site prediction', Nucleic Acids Res, 29(5), pp. 1185-90.
