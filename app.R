@@ -1,3 +1,5 @@
+# DEPLOYED VERSION #
+
 ##### Load libraries ######
 library(shiny)
 library(DT)
@@ -38,7 +40,9 @@ ui <- fluidPage(
     #sliderInput("Pangolin", "Pangolin cutoff:", min = 0, max = 1, value = 0.2, step = 0.1),
     
     # Choose gnomAD cutoff
-    sliderInput("gnomAD", "gnomAD allele frequency:", min = 0, max = 1, value = 0, step = 0.1),
+    # sliderInput("gnomAD", "gnomAD allele frequency:", min = 0, max = 1, value = 0, step = 0.1),
+    selectInput("gnomAD", "gnomAD allele frequency cutoff:", choices = c("None", "0", "0.0001", "0.0002", 
+                                                                         "0.002","0.005")),
     
     # Choose what to plot
     selectInput("plot", "FDR plot:", choices = c("SpliceAI_DS_AG", "SpliceAI_DS_AL", "SpliceAI_DS_DG", 
@@ -367,10 +371,11 @@ server <- function(input, output, session) {
     }
     
     # Filter gnomAD allele frequency
-    if (input$gnomAD != 0) {
+    if (input$gnomAD != "None") {
+      freq <- as.numeric(input$gnomAD)
       dataFilteredgnomAD <- data[which(data$gnomAD_AF!='-'),]
       dataFilteredgnomAD$gnomAD_AF <- as.numeric(dataFilteredgnomAD$gnomAD_AF)
-      data <- subset(dataFilteredgnomAD, gnomAD_AF < input$gnomAD)
+      data <- subset(dataFilteredgnomAD, gnomAD_AF <= freq)
     }
     
     dataDebug<<-data
