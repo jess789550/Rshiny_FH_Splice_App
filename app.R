@@ -63,105 +63,37 @@ ui <- fluidPage(
                 tabPanel("Splice variants and prediction scores",
                          # Table of splice variants and prediction scores
                          h2("Table of splice variants and prediction scores"),
-                         fluidRow(
-                           column(4,
-                                  selectInput("col_file_id",
-                                              "File:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_CHROM",
-                                              "Chromosome:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_POS",
-                                              "Position:",
-                                              c("All"))
-                           )
-                         ),
-                         fluidRow(
-                           column(4,
-                                  selectInput("col_REF",
-                                              "Reference allele:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_ALT",
-                                              "Alternative allele:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_SYMBOL",
-                                              "Gene symbol:",
-                                              c("All"))
-                           )
-                         ),
-                         fluidRow(
-                           column(4,
-                                  selectInput("col_HGVSc",
-                                              "HGVSc nomenclature",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_gnomAD_AF",
-                                              "gnomAD allele frequency:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_SpliceAI_DS_AG",
-                                              "SpliceAI Acceptor Gain:",
-                                              c("All"))
-                           )
-                         ),
-                         fluidRow(
-                           column(4,
-                                  selectInput("col_SpliceAI_DS_AL",
-                                              "SpliceAI Acceptor Loss:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_SpliceAI_DS_DG",
-                                              "SpliceAI Donor Gain:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_SpliceAI_DS_DL",
-                                              "SpliceAI Donor Loss:",
-                                              c("All"))
-                           )
-                         ),
-                         fluidRow(
-                           column(4,
-                                  selectInput("col_mmsplice_delta_logit_psi",
-                                              "MMSplice:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_MaxEntScan_alt",
-                                              "MES alt:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_MaxEntScan_diff",
-                                              "MES diff:",
-                                              c("All"))
-                           )
-                         ),
-                         fluidRow(
-                           column(4,
-                                  selectInput("col_SQUIRLS",
-                                              "SQUIRLS:",
-                                              c("All"))
-                           ),
-                           column(4,
-                                  selectInput("col_Type",
-                                              "True positive or false positive:",
-                                              c("All"))
-                           )
-                         ),
-                         box(style='width:800px;overflow-x: scroll; overflow-y: scroll;',
-                             DT::dataTableOutput("splice_table"),)
+                         fluidRow(box(style='width:1000px;',
+                           fluidRow(
+                             column(2, selectizeInput(inputId="col_file_id", label="File:", choices="All")),
+                             column(2, selectizeInput(inputId="col_CHROM", label="Chromosome:", choices="All")),
+                             column(2,selectizeInput(inputId="col_POS", label="Position:", choices="All")),
+                             column(2,selectizeInput(inputId="col_REF", label="Reference allele:", choices="All")),
+                             column(2,selectizeInput(inputId="col_ALT", label="Alternative allele:", choices="All")),
+                             column(2,selectizeInput(inputId="col_SYMBOL", label="Gene symbol:", choices="All")),
+                             ),
+                           fluidRow(
+                             column(2, selectizeInput(inputId="col_HGVSc", label="HGVSc nomenclature:", choices="All")),
+                             column(2, selectizeInput(inputId="col_gnomAD_AF", label="gnomAD allele frequency:", choices="All")),
+                             column(2, selectizeInput(inputId="col_SpliceAI_DS_AG", label="SpliceAI Acceptor Gain:", choices="All")),
+                             column(2, selectizeInput(inputId="col_SpliceAI_DS_AL", label="SpliceAI Acceptor Loss:", choices="All")),
+                             column(2, selectizeInput(inputId="col_SpliceAI_DS_DG", label="SpliceAI Donor Gain:", choices="All")),
+                             column(2, selectizeInput(inputId="col_SpliceAI_DS_DL", label="SpliceAI Donor Loss:", choices="All")),
+                             ),
+                           fluidRow(
+                             column(2, selectizeInput(inputId="col_mmsplice_delta_logit_psi", label="MMSplice:", choices="All")),
+                             column(2, selectizeInput(inputId="col_MaxEntScan_alt", label="MES alt:", choices="All")),
+                             column(2, selectizeInput(inputId="col_MaxEntScan_diff", label="MES diff:", choices="All")),
+                             column(2, selectizeInput(inputId="col_SQUIRLS", label="SQUIRLS:", choices="All")),
+                             column(2, selectizeInput(inputId="col_Type", label="True positive or false positive:", choices="All")),
+                             column(2, selectizeInput(inputId="col_QUAL", label="VCF Quality score:", choices="All")),
+                             ),
+                           fluidRow(
+                             column(2, actionButton(inputId = "Filter", label = "Filter"))
+                             ))),
+                         br(),
+                         fluidRow(box(style='width:800px;overflow-x: scroll; overflow-y: scroll;',
+                             DT::dataTableOutput("splice_table"),))
                 ),
                 tabPanel("Performance metrics",
                          # Table of performance metrics
@@ -197,135 +129,69 @@ server <- function(input, output, session) {
     return(replacedText)
   })
   
-  ### On click of button ###
+  ### On click of submit button produce tables and plot ###
   observeEvent(input$Submit, {
     
     # Read worklist splice site prediction results
     file <- paste(input$worklist, ".csv", sep="")
     original_data <- read.csv(file)  # need original_data downstream
     data <- original_data  # for filtering
-    
+    dataDebug_Intro<<-data
     # Update column filters 
     # https://stackoverflow.com/questions/46346917/update-shinys-selectinput-dropdown-with-new-values-after-uploading-new-data-u
-    updateSelectInput(session, "col_file_id",
+    updateSelectizeInput(session, "col_file_id",
                       choices = c("All", unique(as.character(data$file_id))))
     
-    updateSelectInput(session, "col_CHROM",
+    updateSelectizeInput(session, "col_CHROM",
                       choices = c("All", unique(as.character(data$CHROM))))
     
-    updateSelectInput(session, "col_POS",
+    updateSelectizeInput(session, "col_POS",
                       choices = c("All", unique(as.character(data$POS))))
-    
-    updateSelectInput(session, "col_REF",
+
+    updateSelectizeInput(session, "col_REF",
                       choices = c("All", unique(as.character(data$REF))))
-    
-    updateSelectInput(session, "col_ALT",
+
+    updateSelectizeInput(session, "col_ALT",
                       choices = c("All", unique(as.character(data$ALT))))
     
-    updateSelectInput(session, "col_SYMBOL",
-                      choices = c("All", unique(as.character(data$SYMBOL))))
-    
-    updateSelectInput(session, "col_HGVSc",
+    updateSelectizeInput(session, 'col_SYMBOL', 
+                         choices = c("All", unique(as.character(data$SYMBOL))))
+
+    updateSelectizeInput(session, "col_HGVSc",
                       choices = c("All", unique(as.character(data$HGVSc))))
     
-    updateSelectInput(session, "col_gnomAD_AF",
+    updateSelectizeInput(session, "col_gnomAD_AF",
                       choices = c("All", unique(as.character(data$gnomAD_AF))))
     
-    updateSelectInput(session, "col_SpliceAI_DS_AG",
+    updateSelectizeInput(session, "col_SpliceAI_DS_AG",
                       choices = c("All", unique(as.character(data$SpliceAI_DS_AG))))
     
-    updateSelectInput(session, "col_SpliceAI_DS_AL",
+    updateSelectizeInput(session, "col_SpliceAI_DS_AL",
                       choices = c("All", unique(as.character(data$SpliceAI_DS_AL))))
     
-    updateSelectInput(session, "col_SpliceAI_DS_DG",
+    updateSelectizeInput(session, "col_SpliceAI_DS_DG",
                       choices = c("All", unique(as.character(data$SpliceAI_DS_DG))))
     
-    updateSelectInput(session, "col_SpliceAI_DS_DL",
+    updateSelectizeInput(session, "col_SpliceAI_DS_DL",
                       choices = c("All", unique(as.character(data$SpliceAI_DS_DL))))
     
-    updateSelectInput(session, "col_mmsplice_delta_logit_psi",
+    updateSelectizeInput(session, "col_mmsplice_delta_logit_psi",
                       choices = c("All", unique(as.character(data$mmsplice_delta_logit_psi))))
     
-    updateSelectInput(session, "col_MaxEntScan_alt",
+    updateSelectizeInput(session, "col_MaxEntScan_alt",
                       choices = c("All", unique(as.character(data$MaxEntScan_alt))))
     
-    updateSelectInput(session, "col_MaxEntScan_diff",
+    updateSelectizeInput(session, "col_MaxEntScan_diff",
                       choices = c("All", unique(as.character(data$MaxEntScan_diff))))
     
-    updateSelectInput(session, "col_SQUIRLS",
+    updateSelectizeInput(session, "col_SQUIRLS",
                       choices = c("All", unique(as.character(data$SQUIRLS))))
-    
-    updateSelectInput(session, "col_Type",
+
+    updateSelectizeInput(session, "col_Type",
                       choices = c("All", unique(as.character(data$Type))))
-    
-    # Filter by column values
-    if (input$col_file_id != "All") {
-      data <- data[data$file_id == input$col_file_id,]
-    }
-    
-    if (input$col_CHROM!= "All") {
-      data <- data[data$CHROM == input$col_CHROM,]
-    }
-    
-    if (input$col_POS!= "All") {
-      data <- data[data$POS == input$col_POS,]
-    }
-    
-    if (input$col_REF!= "All") {
-      data <- data[data$REF == input$col_REF,]
-    }
-    
-    if (input$col_ALT!= "All") {
-      data <- data[data$ALT == input$col_ALT,]
-    }
-    
-    if (input$col_SYMBOL!= "All") {
-      data <- data[data$SYMBOL == input$col_SYMBOL,]
-    }
-    
-    if (input$col_HGVSc!= "All") {
-      data <- data[data$HGVSc == input$col_HGVSc,]
-    }
-    
-    if (input$col_gnomAD_AF!= "All") {
-      data <- data[data$gnomAD_AF == input$col_gnomAD_AF,]
-    }
-    
-    if (input$col_SpliceAI_DS_AG!= "All") {
-      data <- data[data$SpliceAI_DS_AG == input$col_SpliceAI_DS_AG,]
-    }
-    
-    if (input$col_SpliceAI_DS_AL!= "All") {
-      data <- data[data$SpliceAI_DS_AL == input$col_SpliceAI_DS_AL,]
-    }
-    
-    if (input$col_SpliceAI_DS_DG!= "All") {
-      data <- data[data$SpliceAI_DS_DG == input$col_SpliceAI_DS_DG,]
-    }
-    
-    if (input$col_SpliceAI_DS_DL!= "All") {
-      data <- data[data$SpliceAI_DS_DL == input$col_SpliceAI_DS_DL,]
-    }
-    
-    if (input$col_mmsplice_delta_logit_psi!= "All") {
-      data <- data[data$mmsplice_delta_logit_psi == input$col_mmsplice_delta_logit_psi,]
-    }
-    
-    if (input$col_MaxEntScan_alt!= "All") {
-      data <- data[data$MaxEntScan_alt == input$col_MaxEntScan_alt,]
-    }
-    
-    if (input$col_MaxEntScan_diff!= "All") {
-      data <- data[data$MaxEntScan_diff == input$col_MaxEntScan_diff,]
-    }
-    
-    if (input$col_SQUIRLS!= "All") {
-      data <- data[data$SQUIRLS == input$col_SQUIRLS,]
-    }
-    
-    if (input$col_Type!= "All") {
-      data <- data[data$Type == input$col_Type,]
-    }
+
+    updateSelectizeInput(session, "col_QUAL",
+                      choices = c("All", unique(as.character(data$QUAL))))
     
     # Filter SpliceAI results
     if (input$SpliceAI != 0) {
@@ -378,7 +244,7 @@ server <- function(input, output, session) {
       data <- subset(dataFilteredgnomAD, gnomAD_AF <= freq)
     }
     
-    dataDebug<<-data
+    filtered_data <<- data
     
     ### Show table of filtered data ###
     output$splice_table <- DT::renderDataTable(DT::datatable({
@@ -478,6 +344,88 @@ server <- function(input, output, session) {
         NULL
       }
     )
+  })
+  
+  ### Filter table of splice variants and prediction scores ###
+  observeEvent(input$Filter, {
+    # Filter by column values
+    if (input$col_file_id != "All") {
+      filtered_data <- filtered_data[filtered_data$file_id == input$col_file_id,]
+    }
+    
+    if (input$col_CHROM!= "All") {
+      filtered_data <- filtered_data[filtered_data$CHROM == input$col_CHROM,]
+    }
+    
+    if (input$col_POS!= "All") {
+      filtered_data <- filtered_data[filtered_data$POS == input$col_POS,]
+    }
+    
+    if (input$col_REF!= "All") {
+      filtered_data <- filtered_data[filtered_data$REF == input$col_REF,]
+    }
+    
+    if (input$col_ALT!= "All") {
+      filtered_data <- filtered_data[filtered_data$ALT == input$col_ALT,]
+    }
+    
+    if (input$col_SYMBOL!= "All") {
+      filtered_data <- filtered_data[filtered_data$SYMBOL == input$col_SYMBOL,]
+    }
+    
+    if (input$col_HGVSc!= "All") {
+      filtered_data <- filtered_data[filtered_data$HGVSc == input$col_HGVSc,]
+    }
+    
+    if (input$col_gnomAD_AF!= "All") {
+      filtered_data <- filtered_data[filtered_data$gnomAD_AF == input$col_gnomAD_AF,]
+    }
+    
+    if (input$col_SpliceAI_DS_AG!= "All") {
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AG == input$col_SpliceAI_DS_AG,]
+    }
+    
+    if (input$col_SpliceAI_DS_AL!= "All") {
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AL == input$col_SpliceAI_DS_AL,]
+    }
+    
+    if (input$col_SpliceAI_DS_DG!= "All") {
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DG == input$col_SpliceAI_DS_DG,]
+    }
+    
+    if (input$col_SpliceAI_DS_DL!= "All") {
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DL == input$col_SpliceAI_DS_DL,]
+    }
+    
+    if (input$col_mmsplice_delta_logit_psi!= "All") {
+      filtered_data <- filtered_data[filtered_data$mmsplice_delta_logit_psi == input$col_mmsplice_delta_logit_psi,]
+    }
+    
+    if (input$col_MaxEntScan_alt!= "All") {
+      filtered_data <- filtered_data[filtered_data$MaxEntScan_alt == input$col_MaxEntScan_alt,]
+    }
+    
+    if (input$col_MaxEntScan_diff!= "All") {
+      filtered_data <- filtered_data[filtered_data$MaxEntScan_diff == input$col_MaxEntScan_diff,]
+    }
+    
+    if (input$col_SQUIRLS!= "All") {
+      filtered_data <- filtered_data[filtered_data$SQUIRLS == input$col_SQUIRLS,]
+    }
+    
+    if (input$col_Type!= "All") {
+      filtered_data <- filtered_data[filtered_data$Type == input$col_Type,]
+    }
+    
+    if (input$col_QUAL!= "All") {
+      filtered_data <- filtered_data[filtered_data$QUAL == input$col_QUAL,]
+    }
+    
+    ### Show table of filtered data ###
+    output$splice_table <- DT::renderDataTable(DT::datatable({
+      filtered_data
+    }))
+    
   })
 }
 
