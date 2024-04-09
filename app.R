@@ -1,4 +1,4 @@
-# DEPLOYED VERSION #
+# DEPLOYMENT VERSION #
 
 ##### Load libraries ######
 library(shiny)
@@ -7,12 +7,14 @@ library(shinydashboard) # for box()
 library(ggplot2)
 
 ##### Define UI: https://shiny.posit.co/r/gallery/widgets/basic-datatable/ #####
-ui <- fluidPage(
+ui <- dashboardPage(
   ### Title ##
-  titlePanel("FH Splice Site Prediction Results"),
+  dashboardHeader(
+    title="FH Splice Site Prediction Results"
+  ),
   
   ### Create a sidebar panel in the UI for adjusting parameters ###
-  sidebarPanel(
+  dashboardSidebar(
     
     # Allow user to select worklist
     selectInput("worklist", "Choose a worklist:",
@@ -53,7 +55,7 @@ ui <- fluidPage(
   ),
   
   ### Create a main panel to display table of results ###
-  mainPanel(
+  dashboardBody(
     
     tabsetPanel(type = "tabs",
                 tabPanel("Description" ,
@@ -64,36 +66,36 @@ ui <- fluidPage(
                          # Table of splice variants and prediction scores
                          h2("Table of splice variants and prediction scores"),
                          fluidRow(box(style='width:1000px;',
-                           fluidRow(
-                             column(2, selectizeInput(inputId="col_file_id", label="File:", choices="All")),
-                             column(2, selectizeInput(inputId="col_CHROM", label="Chromosome:", choices="All")),
-                             column(2,selectizeInput(inputId="col_POS", label="Position:", choices="All")),
-                             column(2,selectizeInput(inputId="col_REF", label="Reference allele:", choices="All")),
-                             column(2,selectizeInput(inputId="col_ALT", label="Alternative allele:", choices="All")),
-                             column(2,selectizeInput(inputId="col_SYMBOL", label="Gene symbol:", choices="All")),
-                             ),
-                           fluidRow(
-                             column(2, selectizeInput(inputId="col_HGVSc", label="HGVSc nomenclature:", choices="All")),
-                             column(2, selectizeInput(inputId="col_gnomAD_AF", label="gnomAD allele frequency:", choices="All")),
-                             column(2, selectizeInput(inputId="col_SpliceAI_DS_AG", label="SpliceAI Acceptor Gain:", choices="All")),
-                             column(2, selectizeInput(inputId="col_SpliceAI_DS_AL", label="SpliceAI Acceptor Loss:", choices="All")),
-                             column(2, selectizeInput(inputId="col_SpliceAI_DS_DG", label="SpliceAI Donor Gain:", choices="All")),
-                             column(2, selectizeInput(inputId="col_SpliceAI_DS_DL", label="SpliceAI Donor Loss:", choices="All")),
-                             ),
-                           fluidRow(
-                             column(2, selectizeInput(inputId="col_mmsplice_delta_logit_psi", label="MMSplice:", choices="All")),
-                             column(2, selectizeInput(inputId="col_MaxEntScan_alt", label="MES alt:", choices="All")),
-                             column(2, selectizeInput(inputId="col_MaxEntScan_diff", label="MES diff:", choices="All")),
-                             column(2, selectizeInput(inputId="col_SQUIRLS", label="SQUIRLS:", choices="All")),
-                             column(2, selectizeInput(inputId="col_Type", label="True positive or false positive:", choices="All")),
-                             column(2, selectizeInput(inputId="col_QUAL", label="VCF Quality score:", choices="All")),
-                             ),
-                           fluidRow(
-                             column(2, actionButton(inputId = "Filter", label = "Filter"))
-                             ))),
+                                      fluidRow(
+                                        column(2, selectizeInput(inputId="col_file_id", label="File:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_CHROM", label="Chromosome:", choices="All")),
+                                        column(2,selectizeInput(inputId="col_POS", label="Position:", choices="All")),
+                                        column(2,selectizeInput(inputId="col_REF", label="Reference allele:", choices="All")),
+                                        column(2,selectizeInput(inputId="col_ALT", label="Alternative allele:", choices="All")),
+                                        column(2,selectizeInput(inputId="col_SYMBOL", label="Gene symbol:", choices="All")),
+                                      ),
+                                      fluidRow(
+                                        column(2, selectizeInput(inputId="col_HGVSc", label="HGVSc nomenclature:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_gnomAD_AF", label="gnomAD allele frequency:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_AG", label="SpliceAI Acceptor Gain:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_AL", label="SpliceAI Acceptor Loss:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_DG", label="SpliceAI Donor Gain:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_DL", label="SpliceAI Donor Loss:", choices="All")),
+                                      ),
+                                      fluidRow(
+                                        column(2, selectizeInput(inputId="col_mmsplice_delta_logit_psi", label="MMSplice:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_MaxEntScan_alt", label="MES alt:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_MaxEntScan_diff", label="MES diff:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_SQUIRLS", label="SQUIRLS:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_Type", label="True positive or false positive:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_QUAL", label="VCF Quality score:", choices="All")),
+                                      ),
+                                      fluidRow(
+                                        column(2, actionButton(inputId = "Filter", label = "Filter"))
+                                      ))),
                          br(),
                          fluidRow(box(style='width:800px;overflow-x: scroll; overflow-y: scroll;',
-                             DT::dataTableOutput("splice_table"),))
+                                      DT::dataTableOutput("splice_table"),))
                 ),
                 tabPanel("Performance metrics",
                          # Table of performance metrics
@@ -140,58 +142,58 @@ server <- function(input, output, session) {
     # Update column filters 
     # https://stackoverflow.com/questions/46346917/update-shinys-selectinput-dropdown-with-new-values-after-uploading-new-data-u
     updateSelectizeInput(session, "col_file_id",
-                      choices = c("All", unique(as.character(data$file_id))))
+                         choices = c("All", unique(as.character(data$file_id))))
     
     updateSelectizeInput(session, "col_CHROM",
-                      choices = c("All", unique(as.character(data$CHROM))))
+                         choices = c("All", unique(as.character(data$CHROM))))
     
-    updateSelectizeInput(session, "col_POS",
-                      choices = c("All", unique(as.character(data$POS))))
-
+    # updateSelectizeInput(session, "col_POS",
+    #                   choices = c("All", unique(as.character(data$POS))))
+    
     updateSelectizeInput(session, "col_REF",
-                      choices = c("All", unique(as.character(data$REF))))
-
-    updateSelectizeInput(session, "col_ALT",
-                      choices = c("All", unique(as.character(data$ALT))))
+                         choices = c("All", unique(as.character(data$REF))))
     
-    updateSelectizeInput(session, 'col_SYMBOL', 
-                         choices = c("All", unique(as.character(data$SYMBOL))))
-
-    updateSelectizeInput(session, "col_HGVSc",
-                      choices = c("All", unique(as.character(data$HGVSc))))
+    updateSelectizeInput(session, "col_ALT",
+                         choices = c("All", unique(as.character(data$ALT))))
+    
+    # updateSelectizeInput(session, 'col_SYMBOL', 
+    #                      choices = c("All", unique(as.character(data$SYMBOL))))
+    # 
+    # updateSelectizeInput(session, "col_HGVSc",
+    #                   choices = c("All", unique(as.character(data$HGVSc))))
     
     updateSelectizeInput(session, "col_gnomAD_AF",
-                      choices = c("All", unique(as.character(data$gnomAD_AF))))
+                         choices = c("All", unique(as.character(data$gnomAD_AF))))
     
     updateSelectizeInput(session, "col_SpliceAI_DS_AG",
-                      choices = c("All", unique(as.character(data$SpliceAI_DS_AG))))
+                         choices = c("All", unique(as.character(data$SpliceAI_DS_AG))))
     
     updateSelectizeInput(session, "col_SpliceAI_DS_AL",
-                      choices = c("All", unique(as.character(data$SpliceAI_DS_AL))))
+                         choices = c("All", unique(as.character(data$SpliceAI_DS_AL))))
     
     updateSelectizeInput(session, "col_SpliceAI_DS_DG",
-                      choices = c("All", unique(as.character(data$SpliceAI_DS_DG))))
+                         choices = c("All", unique(as.character(data$SpliceAI_DS_DG))))
     
     updateSelectizeInput(session, "col_SpliceAI_DS_DL",
-                      choices = c("All", unique(as.character(data$SpliceAI_DS_DL))))
+                         choices = c("All", unique(as.character(data$SpliceAI_DS_DL))))
     
-    updateSelectizeInput(session, "col_mmsplice_delta_logit_psi",
-                      choices = c("All", unique(as.character(data$mmsplice_delta_logit_psi))))
+    # updateSelectizeInput(session, "col_mmsplice_delta_logit_psi",
+    #                   choices = c("All", unique(as.character(data$mmsplice_delta_logit_psi))))
     
     updateSelectizeInput(session, "col_MaxEntScan_alt",
-                      choices = c("All", unique(as.character(data$MaxEntScan_alt))))
+                         choices = c("All", unique(as.character(data$MaxEntScan_alt))))
     
     updateSelectizeInput(session, "col_MaxEntScan_diff",
-                      choices = c("All", unique(as.character(data$MaxEntScan_diff))))
+                         choices = c("All", unique(as.character(data$MaxEntScan_diff))))
     
-    updateSelectizeInput(session, "col_SQUIRLS",
-                      choices = c("All", unique(as.character(data$SQUIRLS))))
-
+    # updateSelectizeInput(session, "col_SQUIRLS",
+    #                   choices = c("All", unique(as.character(data$SQUIRLS))))
+    
     updateSelectizeInput(session, "col_Type",
-                      choices = c("All", unique(as.character(data$Type))))
-
-    updateSelectizeInput(session, "col_QUAL",
-                      choices = c("All", unique(as.character(data$QUAL))))
+                         choices = c("All", unique(as.character(data$Type))))
+    
+    # updateSelectizeInput(session, "col_QUAL",
+    #                   choices = c("All", unique(as.character(data$QUAL))))
     
     # Filter SpliceAI results
     if (input$SpliceAI != 0) {
