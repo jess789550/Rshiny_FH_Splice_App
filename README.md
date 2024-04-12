@@ -40,7 +40,7 @@ The gnomAD allele frequency can be filter to less than or equal to 0, 0.0001, 0.
 # How to use
 Use sliders to filter data then press "submit". 
 
-NOTE: Please press "submit" again after using splice variant table column filters.
+To filter the splice variants and prediction scores table Please press "Filter" after using splice variant table column filters.
 
 Navigate through the different tabs to see the results.
 
