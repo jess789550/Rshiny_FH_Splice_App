@@ -99,10 +99,10 @@ ui <- dashboardPage(
                                         column(2, selectizeInput(inputId="col_SpliceAI_DS_DL", label="SpliceAI Donor Loss:", 
                                                                  choices=c("All", "0-0.1", "0.1-0.2", "0.2-0.3", "0.3-0.4", "0.4-0.5",
                                                                            "0.5-0.6", "0.6-0.7", "0.7-0.8", "0.8-0.9", "0.9-1"))),
-                                      ),
-                                      fluidRow(
                                         column(2, selectizeInput(inputId="col_mmsplice_delta_logit_psi", label="MMSplice:", 
                                                                  choices=c("All", "Less than 0", "0-0.5", "0.5-1", "1-1.5", "1.5-2"))),
+                                      ),
+                                      fluidRow(
                                         column(2, selectizeInput(inputId="col_MaxEntScan_alt", label="MES alt:", 
                                                                  choices=c("All", "Less than 0", "0-5", "5-10", "10-15", "15-20"))),
                                         column(2, selectizeInput(inputId="col_MaxEntScan_diff", label="MES diff:", 
@@ -474,7 +474,7 @@ server <- function(input, output, session) {
     }
     
     # Filter MES columns
-    if (input$col_MaxEntScan_alt!= "All") {
+    if (input$col_MaxEntScan_alt != "All") {
       if (input$col_MaxEntScan_alt == "Less than 0") {
         filtered_data <- filtered_data[filtered_data$MaxEntScan_alt <= 0,]
       } else {
@@ -486,15 +486,15 @@ server <- function(input, output, session) {
       }
     }
     
-    if (input$col_MaxEntScan_ref!= "All") {
-      if (input$col_MaxEntScan_ref == "Less than 0") {
-        filtered_data <- filtered_data[filtered_data$MaxEntScan_ref <= 0,]
+    if (input$col_MaxEntScan_diff != "All") {
+      if (input$col_MaxEntScan_diff == "Less than 0") {
+        filtered_data <- filtered_data[filtered_data$MaxEntScan_diff <= 0,]
       } else {
-        sep <- str_split(input$col_MaxEntScan_ref, "-")
+        sep <- str_split(input$col_MaxEntScan_diff, "-")
         start <- sep[[1]][1]
         end <- sep[[1]][2]
-        filtered_data <- filtered_data[filtered_data$MaxEntScan_ref >= start,]
-        filtered_data <- filtered_data[filtered_data$MaxEntScan_ref <= end,]
+        filtered_data <- filtered_data[filtered_data$MaxEntScan_diff >= start,]
+        filtered_data <- filtered_data[filtered_data$MaxEntScan_diff <= end,]
       }
     }
     
