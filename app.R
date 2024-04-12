@@ -5,6 +5,7 @@ library(shiny)
 library(DT)
 library(shinydashboard) # for box()
 library(ggplot2)
+library(stringr)
 
 ##### Define UI: https://shiny.posit.co/r/gallery/widgets/basic-datatable/ #####
 ui <- dashboardPage(
@@ -46,6 +47,10 @@ ui <- dashboardPage(
     selectInput("gnomAD", "gnomAD allele frequency cutoff:", choices = c("None", "0", "0.0001", "0.0002", 
                                                                          "0.002","0.005")),
     
+    # Detected by GeneSplicer?
+    radioButtons("GeneSplicer", label = "Must be detected by GeneSplicer?",
+                 choices = c("Yes", "No"), selected = "No"),
+    
     # Choose what to plot
     selectInput("plot", "FDR plot:", choices = c("SpliceAI_DS_AG", "SpliceAI_DS_AL", "SpliceAI_DS_DG", 
                                                  "SpliceAI_DS_DL", "MaxEntScan_alt", "SQUIRLS", "mmsplice_delta_logit_psi")),
@@ -65,36 +70,56 @@ ui <- dashboardPage(
                 tabPanel("Splice variants and prediction scores",
                          # Table of splice variants and prediction scores
                          h2("Table of splice variants and prediction scores"),
-                         fluidRow(box(style='width:1000px;',
+                         fluidRow(box(width=12, style='width:1000px',
                                       fluidRow(
                                         column(2, selectizeInput(inputId="col_file_id", label="File:", choices="All")),
                                         column(2, selectizeInput(inputId="col_CHROM", label="Chromosome:", choices="All")),
-                                        column(2,selectizeInput(inputId="col_POS", label="Position:", choices="All")),
+                                        column(2,selectizeInput(inputId="col_POS", label="Position:", 
+                                                                choices=c("All", "0-100000",  "100000-30100000",  "30100000-60100000",  "60100000-90100000", 
+                                                                          "90100000-120100000", "120100000-150100000", "150100000-180100000", 
+                                                                          "180100000-210100000", "210100000-240100000", "240100000-270100000"))),
                                         column(2,selectizeInput(inputId="col_REF", label="Reference allele:", choices="All")),
                                         column(2,selectizeInput(inputId="col_ALT", label="Alternative allele:", choices="All")),
-                                        column(2,selectizeInput(inputId="col_SYMBOL", label="Gene symbol:", choices="All")),
+                                        column(2,selectizeInput(inputId="col_SYMBOL", label="Gene symbol:", 
+                                                                choices=c("All", "LDLR", "LDLRAP1", "APOB", "APOE", "PCSK9"))),
                                       ),
                                       fluidRow(
-                                        column(2, selectizeInput(inputId="col_HGVSc", label="HGVSc nomenclature:", choices="All")),
-                                        column(2, selectizeInput(inputId="col_gnomAD_AF", label="gnomAD allele frequency:", choices="All")),
-                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_AG", label="SpliceAI Acceptor Gain:", choices="All")),
-                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_AL", label="SpliceAI Acceptor Loss:", choices="All")),
-                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_DG", label="SpliceAI Donor Gain:", choices="All")),
-                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_DL", label="SpliceAI Donor Loss:", choices="All")),
+                                        # column(2, selectizeInput(inputId="col_HGVSc", label="HGVSc nomenclature:", choices="All")),
+                                        # column(2, selectizeInput(inputId="col_gnomAD_AF", label="gnomAD allele frequency:", 
+                                        #                          choices=c("All", 0-0.25, 0.25-0.5, 0.5-0.75, 0.75-1))),
+                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_AG", label="SpliceAI Acceptor Gain:", 
+                                                                 choices=c("All", "0-0.1", "0.1-0.2", "0.2-0.3", "0.3-0.4", "0.4-0.5",
+                                                                           "0.5-0.6", "0.6-0.7", "0.7-0.8", "0.8-0.9", "0.9-1"))),
+                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_AL", label="SpliceAI Acceptor Loss:", 
+                                                                 choices=c("All", "0-0.1", "0.1-0.2", "0.2-0.3", "0.3-0.4", "0.4-0.5",
+                                                                           "0.5-0.6", "0.6-0.7", "0.7-0.8", "0.8-0.9", "0.9-1"))),
+                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_DG", label="SpliceAI Donor Gain:", 
+                                                                 choices=c("All", "0-0.1", "0.1-0.2", "0.2-0.3", "0.3-0.4", "0.4-0.5",
+                                                                           "0.5-0.6", "0.6-0.7", "0.7-0.8", "0.8-0.9", "0.9-1"))),
+                                        column(2, selectizeInput(inputId="col_SpliceAI_DS_DL", label="SpliceAI Donor Loss:", 
+                                                                 choices=c("All", "0-0.1", "0.1-0.2", "0.2-0.3", "0.3-0.4", "0.4-0.5",
+                                                                           "0.5-0.6", "0.6-0.7", "0.7-0.8", "0.8-0.9", "0.9-1"))),
                                       ),
                                       fluidRow(
-                                        column(2, selectizeInput(inputId="col_mmsplice_delta_logit_psi", label="MMSplice:", choices="All")),
-                                        column(2, selectizeInput(inputId="col_MaxEntScan_alt", label="MES alt:", choices="All")),
-                                        column(2, selectizeInput(inputId="col_MaxEntScan_diff", label="MES diff:", choices="All")),
-                                        column(2, selectizeInput(inputId="col_SQUIRLS", label="SQUIRLS:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_mmsplice_delta_logit_psi", label="MMSplice:", 
+                                                                 choices=c("All", "Less than 0", "0-0.5", "0.5-1", "1-1.5", "1.5-2"))),
+                                        column(2, selectizeInput(inputId="col_MaxEntScan_alt", label="MES alt:", 
+                                                                 choices=c("All", "Less than 0", "0-5", "5-10", "10-15", "15-20"))),
+                                        column(2, selectizeInput(inputId="col_MaxEntScan_diff", label="MES diff:", 
+                                                                 choices=c("All", "Less than 0", "0-5", "5-10", "10-15", "15-20"))),
+                                        column(2, selectizeInput(inputId="col_SQUIRLS", label="SQUIRLS:", 
+                                                                 choices=c("All", "0-0.1", "0.1-0.2", "0.2-0.3", "0.3-0.4", "0.4-0.5",
+                                                                           "0.5-0.6", "0.6-0.7", "0.7-0.8", "0.8-0.9", "0.9-1"))),
                                         column(2, selectizeInput(inputId="col_Type", label="True positive or false positive:", choices="All")),
-                                        column(2, selectizeInput(inputId="col_QUAL", label="VCF Quality score:", choices="All")),
+                                        column(2, selectizeInput(inputId="col_QUAL", label="VCF Quality score:", 
+                                                                 choices=c("All", "0-3000", "3000-6000", "6000-9000", "9000-12000", "12000-15000",
+                                                                           "15000-18000", "18000-21000", "21000-24000", "24000-27000", "27000-30000"))),
                                       ),
                                       fluidRow(
                                         column(2, actionButton(inputId = "Filter", label = "Filter"))
                                       ))),
                          br(),
-                         fluidRow(box(style='width:800px;overflow-x: scroll; overflow-y: scroll;',
+                         fluidRow(box(width=10, style='width:800px;overflow-x: scroll; overflow-y: scroll;',
                                       DT::dataTableOutput("splice_table"),))
                 ),
                 tabPanel("Performance metrics",
@@ -113,6 +138,7 @@ ui <- dashboardPage(
     )
   )
 )
+
 
 ##### Define server #####
 server <- function(input, output, session) {
@@ -162,29 +188,29 @@ server <- function(input, output, session) {
     # updateSelectizeInput(session, "col_HGVSc",
     #                   choices = c("All", unique(as.character(data$HGVSc))))
     
-    updateSelectizeInput(session, "col_gnomAD_AF",
-                         choices = c("All", unique(as.character(data$gnomAD_AF))))
+    # updateSelectizeInput(session, "col_gnomAD_AF",
+    #                   choices = c("All", unique(as.character(data$gnomAD_AF))))
     
-    updateSelectizeInput(session, "col_SpliceAI_DS_AG",
-                         choices = c("All", unique(as.character(data$SpliceAI_DS_AG))))
-    
-    updateSelectizeInput(session, "col_SpliceAI_DS_AL",
-                         choices = c("All", unique(as.character(data$SpliceAI_DS_AL))))
-    
-    updateSelectizeInput(session, "col_SpliceAI_DS_DG",
-                         choices = c("All", unique(as.character(data$SpliceAI_DS_DG))))
-    
-    updateSelectizeInput(session, "col_SpliceAI_DS_DL",
-                         choices = c("All", unique(as.character(data$SpliceAI_DS_DL))))
+    # updateSelectizeInput(session, "col_SpliceAI_DS_AG",
+    #                   choices = c("All", unique(as.character(data$SpliceAI_DS_AG))))
+    # 
+    # updateSelectizeInput(session, "col_SpliceAI_DS_AL",
+    #                   choices = c("All", unique(as.character(data$SpliceAI_DS_AL))))
+    # 
+    # updateSelectizeInput(session, "col_SpliceAI_DS_DG",
+    #                   choices = c("All", unique(as.character(data$SpliceAI_DS_DG))))
+    # 
+    # updateSelectizeInput(session, "col_SpliceAI_DS_DL",
+    #                   choices = c("All", unique(as.character(data$SpliceAI_DS_DL))))
     
     # updateSelectizeInput(session, "col_mmsplice_delta_logit_psi",
     #                   choices = c("All", unique(as.character(data$mmsplice_delta_logit_psi))))
     
-    updateSelectizeInput(session, "col_MaxEntScan_alt",
-                         choices = c("All", unique(as.character(data$MaxEntScan_alt))))
-    
-    updateSelectizeInput(session, "col_MaxEntScan_diff",
-                         choices = c("All", unique(as.character(data$MaxEntScan_diff))))
+    # updateSelectizeInput(session, "col_MaxEntScan_alt",
+    #                   choices = c("All", unique(as.character(data$MaxEntScan_alt))))
+    # 
+    # updateSelectizeInput(session, "col_MaxEntScan_diff",
+    #                   choices = c("All", unique(as.character(data$MaxEntScan_diff))))
     
     # updateSelectizeInput(session, "col_SQUIRLS",
     #                   choices = c("All", unique(as.character(data$SQUIRLS))))
@@ -246,7 +272,12 @@ server <- function(input, output, session) {
       data <- subset(dataFilteredgnomAD, gnomAD_AF <= freq)
     }
     
-    filtered_data <<- data
+    # Filter GeneSplicer
+    if (input$GeneSplicer == "Yes") {
+      data <- subset(data, GeneSplicer_score != "-")
+    }
+    
+    filtered_data <<- data  # set global variable so filtered_data can be accessed below
     
     ### Show table of filtered data ###
     output$splice_table <- DT::renderDataTable(DT::datatable({
@@ -348,79 +379,146 @@ server <- function(input, output, session) {
     )
   })
   
-  ### Filter table of splice variants and prediction scores ###
+  ### Filter table of splice variants and prediction scores after clicking Filter button ###
   observeEvent(input$Filter, {
     # Filter by column values
+    # Filter file names/sample IDs
     if (input$col_file_id != "All") {
       filtered_data <- filtered_data[filtered_data$file_id == input$col_file_id,]
     }
     
+    # Filter chromosome
     if (input$col_CHROM!= "All") {
       filtered_data <- filtered_data[filtered_data$CHROM == input$col_CHROM,]
     }
     
+    # Filter position
     if (input$col_POS!= "All") {
-      filtered_data <- filtered_data[filtered_data$POS == input$col_POS,]
+      sep <- str_split(input$col_POS, "-")
+      start <- sep[[1]][1]
+      end <- sep[[1]][2]
+      filtered_data <- filtered_data[filtered_data$POS >= start,]
+      filtered_data <- filtered_data[filtered_data$POS <= end,]
     }
     
+    # Filter reference allele
     if (input$col_REF!= "All") {
       filtered_data <- filtered_data[filtered_data$REF == input$col_REF,]
     }
     
+    # Filter alternative allele
     if (input$col_ALT!= "All") {
       filtered_data <- filtered_data[filtered_data$ALT == input$col_ALT,]
     }
     
+    # Filter gene symbol
     if (input$col_SYMBOL!= "All") {
       filtered_data <- filtered_data[filtered_data$SYMBOL == input$col_SYMBOL,]
     }
     
-    if (input$col_HGVSc!= "All") {
-      filtered_data <- filtered_data[filtered_data$HGVSc == input$col_HGVSc,]
-    }
+    # Filter HGVSc transcript
     
-    if (input$col_gnomAD_AF!= "All") {
-      filtered_data <- filtered_data[filtered_data$gnomAD_AF == input$col_gnomAD_AF,]
-    }
+    # if (input$col_HGVSc!= "All") {
+    #   filtered_data <- filtered_data[filtered_data$HGVSc == input$col_HGVSc,]
+    # }
     
+    # Filter gnomad allele frequency column
+    # if (input$col_gnomAD_AF!= "All") {
+    #   filtered_data <- filtered_data[filtered_data$gnomAD_AF == input$col_gnomAD_AF,]
+    # }
+    
+    # Filter SpliceAI columns
     if (input$col_SpliceAI_DS_AG!= "All") {
-      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AG == input$col_SpliceAI_DS_AG,]
+      sep <- str_split(input$col_SpliceAI_DS_AG, "-")
+      start <- sep[[1]][1]
+      end <- sep[[1]][2]
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AG >= start,]
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AG <= end,]
     }
     
     if (input$col_SpliceAI_DS_AL!= "All") {
-      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AL == input$col_SpliceAI_DS_AL,]
+      sep <- str_split(input$col_SpliceAI_DS_AL, "-")
+      start <- sep[[1]][1]
+      end <- sep[[1]][2]
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AL >= start,]
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AL <= end,]
     }
     
     if (input$col_SpliceAI_DS_DG!= "All") {
-      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DG == input$col_SpliceAI_DS_DG,]
+      sep <- str_split(input$col_SpliceAI_DS_DG, "-")
+      start <- sep[[1]][1]
+      end <- sep[[1]][2]
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DG >= start,]
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DG <= end,]
     }
     
     if (input$col_SpliceAI_DS_DL!= "All") {
-      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DL == input$col_SpliceAI_DS_DL,]
+      sep <- str_split(input$col_SpliceAI_DS_DL, "-")
+      start <- sep[[1]][1]
+      end <- sep[[1]][2]
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DL >= start,]
+      filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DL <= end,]
     }
     
+    # Filter MMSplice column
     if (input$col_mmsplice_delta_logit_psi!= "All") {
-      filtered_data <- filtered_data[filtered_data$mmsplice_delta_logit_psi == input$col_mmsplice_delta_logit_psi,]
+      if (input$col_mmsplice_delta_logit_psi == "Less than 0") {
+        filtered_data <- filtered_data[filtered_data$mmsplice_delta_logit_psi <= 0,]
+      } else {
+        sep <- str_split(input$col_mmsplice_delta_logit_psi, "-")
+        start <- sep[[1]][1]
+        end <- sep[[1]][2]
+        filtered_data <- filtered_data[filtered_data$mmsplice_delta_logit_psi >= start,]
+        filtered_data <- filtered_data[filtered_data$mmsplice_delta_logit_psi <= end,]
+      }
     }
     
+    # Filter MES columns
     if (input$col_MaxEntScan_alt!= "All") {
-      filtered_data <- filtered_data[filtered_data$MaxEntScan_alt == input$col_MaxEntScan_alt,]
+      if (input$col_MaxEntScan_alt == "Less than 0") {
+        filtered_data <- filtered_data[filtered_data$MaxEntScan_alt <= 0,]
+      } else {
+        sep <- str_split(input$col_MaxEntScan_alt, "-")
+        start <- sep[[1]][1]
+        end <- sep[[1]][2]
+        filtered_data <- filtered_data[filtered_data$MaxEntScan_alt >= start,]
+        filtered_data <- filtered_data[filtered_data$MaxEntScan_alt <= end,]
+      }
     }
     
-    if (input$col_MaxEntScan_diff!= "All") {
-      filtered_data <- filtered_data[filtered_data$MaxEntScan_diff == input$col_MaxEntScan_diff,]
+    if (input$col_MaxEntScan_ref!= "All") {
+      if (input$col_MaxEntScan_ref == "Less than 0") {
+        filtered_data <- filtered_data[filtered_data$MaxEntScan_ref <= 0,]
+      } else {
+        sep <- str_split(input$col_MaxEntScan_ref, "-")
+        start <- sep[[1]][1]
+        end <- sep[[1]][2]
+        filtered_data <- filtered_data[filtered_data$MaxEntScan_ref >= start,]
+        filtered_data <- filtered_data[filtered_data$MaxEntScan_ref <= end,]
+      }
     }
     
+    # Filter SQUIRLS column
     if (input$col_SQUIRLS!= "All") {
-      filtered_data <- filtered_data[filtered_data$SQUIRLS == input$col_SQUIRLS,]
+      sep <- str_split(input$col_SQUIRLS, "-")
+      start <- sep[[1]][1]
+      end <- sep[[1]][2]
+      filtered_data <- filtered_data[filtered_data$SQUIRLS >= start,]
+      filtered_data <- filtered_data[filtered_data$SQUIRLS <= end,]
     }
     
+    # Filter TP/FP column
     if (input$col_Type!= "All") {
       filtered_data <- filtered_data[filtered_data$Type == input$col_Type,]
     }
     
+    # Filter VCF quality score column
     if (input$col_QUAL!= "All") {
-      filtered_data <- filtered_data[filtered_data$QUAL == input$col_QUAL,]
+      sep <- str_split(input$col_QUAL, "-")
+      start <- sep[[1]][1]
+      end <- sep[[1]][2]
+      filtered_data <- filtered_data[filtered_data$QUAL >= start,]
+      filtered_data <- filtered_data[filtered_data$QUAL <= end,]
     }
     
     ### Show table of filtered data ###
