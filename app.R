@@ -1,4 +1,4 @@
-# DEPLOYMENT VERSION #
+# DEPLOYED VERSION #
 
 ##### Load libraries ######
 library(shiny)
@@ -56,7 +56,10 @@ ui <- dashboardPage(
                                                  "SpliceAI_DS_DL", "MaxEntScan_alt", "SQUIRLS", "mmsplice_delta_logit_psi")),
     
     # Add button for user to press to initiate run
-    actionButton(inputId = "Submit", label = "Submit")
+    actionButton(inputId = "Submit", label = "Submit"),
+    
+    # Add button to reset slider inputs
+    actionButton(inputId = "Reset", label = "Reset")
   ),
   
   ### Create a main panel to display table of results ###
@@ -162,7 +165,7 @@ server <- function(input, output, session) {
     
     # Read worklist splice site prediction results
     file <- paste(input$worklist, ".csv", sep="")
-    original_data <- read.csv(file)  # need original_data downstream
+    original_data <<- read.csv(file)  # need original_data downstream
     data <- original_data  # for filtering
     dataDebug_Intro<<-data
     # Update column filters 
@@ -288,8 +291,8 @@ server <- function(input, output, session) {
     output$metrics_table <- DT::renderDataTable(DT::datatable({
       
       # Get metrics
-      TP <- nrow(data[data$Type == "TP",])
-      FP <- nrow(data[data$Type == "FP",])
+      TP <- nrow(filtered_data[filtered_data$Type == "TP",])
+      FP <- nrow(filtered_data[filtered_data$Type == "FP",])
       FDR <- FP / (FP + TP)
       
       # create matrix 
@@ -311,7 +314,7 @@ server <- function(input, output, session) {
     
     # Plot input function
     # column <- input$plot
-    plot_func <- function(dataset, column) {
+    plot_func <<- function(dataset, column) {
       renderPlot({
         # plot(density(TP_dat[,column][!is.na(TP_dat[,column])]))
         # lines(density(FP_dat[,column][!is.na(FP_dat[,column])]))
@@ -358,7 +361,7 @@ server <- function(input, output, session) {
     # https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
     output$filtered_plot <- tryCatch(
       {
-        plot_func(data, input$plot)
+        plot_func(filtered_data, input$plot)
       },
       error = function(cond) {
         message("Sorry the TP-FP trade-off plot cannot be produced.")
@@ -521,11 +524,101 @@ server <- function(input, output, session) {
       filtered_data <- filtered_data[filtered_data$QUAL <= end,]
     }
     
-    ### Show table of filtered data ###
+    # Show table of filtered data #
     output$splice_table <- DT::renderDataTable(DT::datatable({
       filtered_data
     }))
     
+    ### Refresh Performance metrics TP, FP, FDR = FP / (FP + TP) ###
+    output$metrics_table <- DT::renderDataTable(DT::datatable({
+      
+      # Get metrics
+      TP <- nrow(filtered_data[filtered_data$Type == "TP",])
+      FP <- nrow(filtered_data[filtered_data$Type == "FP",])
+      FDR <- FP / (FP + TP)
+      
+      # create matrix 
+      table= matrix(c(TP, FP, FDR), ncol=3, byrow=TRUE)
+      
+      # specify the column names and row names of matrix
+      colnames(table) <- c('TP','FP','FDR')
+      
+      # assign to table
+      metrics=as.data.frame(table)
+      
+      metrics
+      metricsDebug<<-metrics
+    }))
+    
+    ### Refresh TP-FP trade-off plot ###
+    output$main_plot <- tryCatch(
+      {
+        plot_func(original_data, input$plot)
+      },
+      error = function(cond) {
+        message("Sorry the TP-FP trade-off plot cannot be produced.")
+        message("This could be due to no TP/FP in your selection.")
+        message("Here's the original error message:")
+        message(conditionMessage(cond))
+        # Choose a return value in case of error
+        NA
+      },
+      warning = function(cond) {
+        message("Sorry the TP-FP trade-off plot cannot be produced.")
+        message("This could be due to no TP/FP in your selection.")
+        message("Here's the original warning message:")
+        message(conditionMessage(cond))
+        # Choose a return value in case of warning
+        NULL
+      }
+    )
+    
+    ### TP-FP trade-off plot filtered ### 
+    # https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot   
+    # https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
+    output$filtered_plot <- tryCatch(
+      {
+        plot_func(filtered_data, input$plot)
+      },
+      error = function(cond) {
+        message("Sorry the TP-FP trade-off plot cannot be produced.")
+        message("This could be due to no TP/FP in your selection.")
+        message("Here's the original error message:")
+        message(conditionMessage(cond))
+        # Choose a return value in case of error
+        NA
+      },
+      warning = function(cond) {
+        message("Sorry the TP-FP trade-off plot cannot be produced.")
+        message("This could be due to no TP/FP in your selection.")
+        message("Here's the original warning message:")
+        message(conditionMessage(cond))
+        # Choose a return value in case of warning
+        NULL
+      }
+    )
+  })
+  
+  ### Reset slider inputs ###
+  observeEvent(input$Reset, {
+    
+    # Reset SpliceAI cutoff
+    updateSliderInput(session, "SpliceAI", value = 0.3)
+    
+    # Reset MES cutoff
+    updateSelectInput(session, "MES", selected = "Low")
+    
+    # Reset SQUIRLS cutoff
+    updateSliderInput(session, "SQUIRLS", value = 0.5)
+    
+    # Reset MMSplice cutoff
+    updateSliderInput(session, "MMSplice", value = 0.5)
+    
+    # Reset gnomAD cutoff
+    updateSelectInput(session, "gnomAD", selected = "None")
+    
+    # Reset Detected by GeneSplicer?
+    updateRadioButtons(session, "GeneSplicer", selected = "No")
   })
 }
 
