@@ -5,7 +5,7 @@ The user can adjust cutoff thresholds for each tool and the app will show how th
 
 Default settings are the optimum values for this dataset.
 
-Results for the following worklists can be viewed:
+Results for the following validation worklists can be found at /data/jess_tmp/exome/Rshiny/exome_splice:
 - 1234567
 - 1234568
 - 1234569
