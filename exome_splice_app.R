@@ -18,19 +18,20 @@ ui <- dashboardPage(
   dashboardSidebar(
     
     # Allow user to upload worklist
-    fileInput("file1", "Choose CSV File", accept = ".csv"),
-    checkboxInput("header", "Header", TRUE),
-    #selectInput("worklist", "Choose a worklist:",
-    #            choices = c("2004442", "2005265", "2005267", "2005745", "2324533",
-    #                        "2400720", "2322015", "2127291", "2226732", "2327211",
-    #                        "2330804", "2331473", "mix")),
+    # fileInput("file1", "Choose CSV File", accept = ".csv"),
+    # checkboxInput("header", "Header", TRUE),
+    
+    # Allow user to select worklist
+    selectInput("worklist", "Choose a worklist:",
+                choices = c("1234567", "1234568", "1234569", "1234570", "1234571",
+                            "1234572", "1234573", "1234574")),
     
     # Choose SpliceAI cutoff
-    sliderInput("SpliceAI", "SpliceAI cutoff:", min = 0, max = 1, value = 0.3, step = 0.1),
+    sliderInput("SpliceAI", "SpliceAI cutoff:", min = 0, max = 1, value = 0.2, step = 0.1),
     
     # Choose MES cutoff
     # sliderInput("MES", "MES cutoff:", min = 0, max = 10, value = 6.2, step = 0.1),
-    selectInput("MES", "MES cutoff:", choices = c("Low", "None", "High")),
+    selectInput("MES", "MES cutoff:", choices = c("None", "Low","High"), selected="Low"),
     
     # Choose GeneSplicer cutoff
     # selectInput("GeneSplicer", "GeneSplicer cutoff:", choices = c("50", "100", "200", "None")),
@@ -47,7 +48,7 @@ ui <- dashboardPage(
     # Choose gnomAD cutoff
     # sliderInput("gnomAD", "gnomAD allele frequency:", min = 0, max = 1, value = 0, step = 0.1),
     selectInput("gnomAD", "gnomAD allele frequency cutoff:", choices = c("None", "0", "0.0001", "0.0002", 
-                                                                         "0.002","0.005")),
+                                                                         "0.002","0.005", "0.01"), selected="0.01"),
     
     # Detected by GeneSplicer?
     radioButtons("GeneSplicer", label = "Must be detected by GeneSplicer?",
@@ -280,9 +281,11 @@ server <- function(input, output, session) {
     # Filter gnomAD allele frequency
     if (input$gnomAD != "None") {
       freq <- as.numeric(input$gnomAD)
+      null_freq_data <- data[which(data$gnomAD_AF=='-'),]
       dataFilteredgnomAD <- data[which(data$gnomAD_AF!='-'),]
       dataFilteredgnomAD$gnomAD_AF <- as.numeric(dataFilteredgnomAD$gnomAD_AF)
       data <- subset(dataFilteredgnomAD, gnomAD_AF <= freq)
+      data <- rbind(data, null_freq_data)
     }
     
     # Filter GeneSplicer
@@ -625,7 +628,7 @@ server <- function(input, output, session) {
     updateSliderInput(session, "MMSplice", value = 0.5)
     
     # Reset gnomAD cutoff
-    updateSelectInput(session, "gnomAD", selected = "None")
+    updateSelectInput(session, "gnomAD", selected = "0.01")
     
     # Reset Detected by GeneSplicer?
     updateRadioButtons(session, "GeneSplicer", selected = "No")
