@@ -1,4 +1,4 @@
-# DEPLOYED VERSION #
+# EXOME DEPLOYED VERSION #
 
 ##### Load libraries ######
 library(shiny)
@@ -168,15 +168,16 @@ server <- function(input, output, session) {
   observeEvent(input$Submit, {
     
     # Read worklist splice site prediction results
-    #file <- paste(input$worklist, ".csv", sep="")
-    file <- input$file1
-    ext <- tools::file_ext(file$datapath)
+    file <- paste(input$worklist, ".csv", sep="")
     
-    req(file)
-    validate(need(ext == "csv", "Please upload a csv file"))
+    # Read uploaded CSV file
+    #file <- input$file1
+    #ext <- tools::file_ext(file$datapath)
+    #req(file)
+    #validate(need(ext == "csv", "Please upload a csv file"))
     
-    #original_data <<- read.csv(file)  # need original_data downstream
-    original_data <<- read.csv(file$datapath, header = input$header)
+    original_data <<- read.csv(file)  # need original_data downstream # Worklist file
+    #original_data <<- read.csv(file$datapath, header = input$header) # Upload file
     data <- original_data  # for filtering
     dataDebug_Intro<<-data
     # Update column filters 
