@@ -57,7 +57,7 @@ runApp("splice")
 
 
 # View app online
-https://jessicakan.shinyapps.io/splice/ 
+https://jessicakan.shinyapps.io/fh_splice/ 
 
 
 
