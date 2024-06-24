@@ -6,6 +6,7 @@ library(DT)
 library(shinydashboard) # for box()
 library(ggplot2)
 library(stringr)
+library(dplyr)
 
 ##### Define UI: https://shiny.posit.co/r/gallery/widgets/basic-datatable/ #####
 ui <- dashboardPage(
@@ -153,132 +154,134 @@ server <- function(input, output, session) {
   ### Get description from README.md ###
   output$Description <- renderUI({
     rawText <- readLines('README.md') # get raw text
-    
+
     # split the text into a list of character vectors
     #   Each element in the list contains one line
     splitText <- stringi::stri_split(str = rawText, regex = '\\n')
-    
+
     # wrap a paragraph tag around each element in the list
     replacedText <- lapply(splitText, p)
-    
+
     return(replacedText)
   })
   
   ### On click of submit button produce tables and plot ###
   observeEvent(input$Submit, {
-    
+
     # Read worklist splice site prediction results
-    file <- paste(input$worklist, ".csv", sep="")
-    
+    file <- paste(input$worklist, "_modified.csv", sep="")
+
     # Read uploaded CSV file
     #file <- input$file1
     #ext <- tools::file_ext(file$datapath)
     #req(file)
     #validate(need(ext == "csv", "Please upload a csv file"))
-    
+
     original_data <<- read.csv(file)  # need original_data downstream # Worklist file
     #original_data <<- read.csv(file$datapath, header = input$header) # Upload file
     data <- original_data  # for filtering
     dataDebug_Intro<<-data
-    # Update column filters 
+    # Update column filters
     # https://stackoverflow.com/questions/46346917/update-shinys-selectinput-dropdown-with-new-values-after-uploading-new-data-u
     updateSelectizeInput(session, "col_file_id",
                          choices = c("All", unique(as.character(data$file_id))))
-    
+
     updateSelectizeInput(session, "col_CHROM",
                          choices = c("All", unique(as.character(data$CHROM))))
-    
+
     # updateSelectizeInput(session, "col_POS",
     #                   choices = c("All", unique(as.character(data$POS))))
-    
+
     updateSelectizeInput(session, "col_REF",
                          choices = c("All", unique(as.character(data$REF))))
-    
+
     updateSelectizeInput(session, "col_ALT",
                          choices = c("All", unique(as.character(data$ALT))))
-    
-    # updateSelectizeInput(session, 'col_SYMBOL', 
+
+    # updateSelectizeInput(session, 'col_SYMBOL',
     #                      choices = c("All", unique(as.character(data$SYMBOL))))
-    # 
+    #
     # updateSelectizeInput(session, "col_HGVSc",
     #                   choices = c("All", unique(as.character(data$HGVSc))))
-    
+
     # updateSelectizeInput(session, "col_gnomAD_AF",
     #                   choices = c("All", unique(as.character(data$gnomAD_AF))))
-    
+
     # updateSelectizeInput(session, "col_SpliceAI_DS_AG",
     #                   choices = c("All", unique(as.character(data$SpliceAI_DS_AG))))
-    # 
+    #
     # updateSelectizeInput(session, "col_SpliceAI_DS_AL",
     #                   choices = c("All", unique(as.character(data$SpliceAI_DS_AL))))
-    # 
+    #
     # updateSelectizeInput(session, "col_SpliceAI_DS_DG",
     #                   choices = c("All", unique(as.character(data$SpliceAI_DS_DG))))
-    # 
+    #
     # updateSelectizeInput(session, "col_SpliceAI_DS_DL",
     #                   choices = c("All", unique(as.character(data$SpliceAI_DS_DL))))
-    
+
     # updateSelectizeInput(session, "col_mmsplice_delta_logit_psi",
     #                   choices = c("All", unique(as.character(data$mmsplice_delta_logit_psi))))
-    
+
     # updateSelectizeInput(session, "col_MaxEntScan_alt",
     #                   choices = c("All", unique(as.character(data$MaxEntScan_alt))))
-    # 
+    #
     # updateSelectizeInput(session, "col_MaxEntScan_diff",
     #                   choices = c("All", unique(as.character(data$MaxEntScan_diff))))
-    
+
     # updateSelectizeInput(session, "col_SQUIRLS",
     #                   choices = c("All", unique(as.character(data$SQUIRLS))))
-    
+
     updateSelectizeInput(session, "col_Type",
                          choices = c("All", unique(as.character(data$Type))))
-    
+
     # updateSelectizeInput(session, "col_QUAL",
     #                   choices = c("All", unique(as.character(data$QUAL))))
-    
+
     # Filter SpliceAI results
     if (input$SpliceAI != 0) {
-      data <- subset(data, SpliceAI_DS_AG > input$SpliceAI | SpliceAI_DS_AL > input$SpliceAI | 
+      data <- subset(data, SpliceAI_DS_AG > input$SpliceAI | SpliceAI_DS_AL > input$SpliceAI |
                        SpliceAI_DS_DG > input$SpliceAI | SpliceAI_DS_DL > input$SpliceAI)
     }
-    
+
     # Filter MES results
     dataFilteredMES<-data[which(data$MaxEntScan_diff!='-'),]
     dataFilteredMES$MaxEntScan_alt<-as.numeric(dataFilteredMES$MaxEntScan_alt)
-    
+
     if (input$MES == "Low") {
-      data <- subset(dataFilteredMES, (MaxEntScan_diff < 0 & MaxEntScan_alt > 6.2) | 
+      data <- subset(dataFilteredMES, (MaxEntScan_diff < 0 & MaxEntScan_alt > 6.2) |
                        (MaxEntScan_diff > 0 & MaxEntScan_alt < 8.5))
     } else if (input$MES == "High") {
-      data <- subset(dataFilteredMES, (MaxEntScan_diff < 0 & MaxEntScan_alt > 8.5) | 
+      data <- subset(dataFilteredMES, (MaxEntScan_diff < 0 & MaxEntScan_alt > 8.5) |
                        (MaxEntScan_diff > 0 & MaxEntScan_alt < 6.2))
     }
-    
+
     # if (input$GeneSplicer != "None") {
     #   data <- subset(data, GeneSplicer_score > input$GeneSplicer)
     # }
-    
+
     #if (input$MMSplice != 0) {
     #data <- subset(data, (mmsplice_delta_logit_psi > input$MMSplice) | (mmsplice_delta_logit_psi < (input$MMSplice * -1)))
     #}
-    
+
     # Filter MMSplice results
     if (input$MMSplice != 0) {
       dataFilteredMMSplice <- data[which(data$mmsplice_delta_logit_psi!='-'),]
       dataFilteredMMSplice$mmsplice_delta_logit_psi <- as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi)
-      data <- rbind(data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) < (-1 * input$MMSplice),], 
-                    data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) > input$MMSplice,])
+      # data <- rbind(data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) < (-1 * input$MMSplice),],
+      #               data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) > input$MMSplice,])
+      data <- rbind(dataFilteredMMSplice %>% filter(mmsplice_delta_logit_psi < (-1 * input$MMSplice)),
+                    dataFilteredMMSplice %>% filter(mmsplice_delta_logit_psi > input$MMSplice))
     }
-    
+
     #if (input$Pangolin != 0) {
     #data <- subset(data, Pangolin_score_change_1 > input$Pangolin | Pangolin_score_change_2 > input$Pangolin)
     #}
-    
+
     # Filter SQUIRLS results
     if (input$SQUIRLS != 0) {
       data <- subset(data, SQUIRLS > input$SQUIRLS)
     }
-    
+
     # Filter gnomAD allele frequency
     if (input$gnomAD != "None") {
       freq <- as.numeric(input$gnomAD)
@@ -288,44 +291,44 @@ server <- function(input, output, session) {
       data <- subset(dataFilteredgnomAD, gnomAD_AF <= freq)
       data <- rbind(data, null_freq_data)
     }
-    
+
     # Filter GeneSplicer
     if (input$GeneSplicer == "Yes") {
       data <- subset(data, GeneSplicer_score != "-")
     }
-    
+
     filtered_data <<- data  # set global variable so filtered_data can be accessed below
-    
+
     ### Show table of filtered data ###
     output$splice_table <- DT::renderDataTable(DT::datatable({
       data
     }))
-    
+
     ### Performance metrics TP, FP, FDR = FP / (FP + TP) ###
     output$metrics_table <- DT::renderDataTable(DT::datatable({
-      
+
       # Get metrics
       TP <- nrow(filtered_data[filtered_data$Type == "TP",])
       FP <- nrow(filtered_data[filtered_data$Type == "FP",])
       FDR <- FP / (FP + TP)
-      
-      # create matrix 
+
+      # create matrix
       table= matrix(c(TP, FP, FDR), ncol=3, byrow=TRUE)
-      
+
       # specify the column names and row names of matrix
       colnames(table) <- c('TP','FP','FDR')
-      
+
       # assign to table
       metrics=as.data.frame(table)
-      
+
       metrics
       metricsDebug<<-metrics
     }))
-    
+
     # Get data
     #TP_dat <- data[data$Type == 'TP', ]
     #FP_dat <- data[data$Type == 'FP', ]
-    
+
     # Plot input function
     # column <- input$plot
     plot_func <<- function(dataset, column) {
@@ -346,7 +349,7 @@ server <- function(input, output, session) {
         }
       })
     }
-    
+
     ### TP-FP trade-off plot ###
     output$main_plot <- tryCatch(
       {
@@ -369,10 +372,10 @@ server <- function(input, output, session) {
         NULL
       }
     )
-    
-    ### TP-FP trade-off plot filtered ### 
-    # https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot   
-    # https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
+
+    ### TP-FP trade-off plot filtered ###
+    # https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot
+    # https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r
     output$filtered_plot <- tryCatch(
       {
         plot_func(filtered_data, input$plot)
@@ -395,7 +398,7 @@ server <- function(input, output, session) {
       }
     )
   })
-  
+
   ### Filter table of splice variants and prediction scores after clicking Filter button ###
   observeEvent(input$Filter, {
     # Filter by column values
@@ -403,12 +406,12 @@ server <- function(input, output, session) {
     if (input$col_file_id != "All") {
       filtered_data <- filtered_data[filtered_data$file_id == input$col_file_id,]
     }
-    
+
     # Filter chromosome
     if (input$col_CHROM!= "All") {
       filtered_data <- filtered_data[filtered_data$CHROM == input$col_CHROM,]
     }
-    
+
     # Filter position
     if (input$col_POS!= "All") {
       sep <- str_split(input$col_POS, "-")
@@ -417,33 +420,33 @@ server <- function(input, output, session) {
       filtered_data <- filtered_data[filtered_data$POS >= start,]
       filtered_data <- filtered_data[filtered_data$POS <= end,]
     }
-    
+
     # Filter reference allele
     if (input$col_REF!= "All") {
       filtered_data <- filtered_data[filtered_data$REF == input$col_REF,]
     }
-    
+
     # Filter alternative allele
     if (input$col_ALT!= "All") {
       filtered_data <- filtered_data[filtered_data$ALT == input$col_ALT,]
     }
-    
+
     # Filter gene symbol
     if (input$col_SYMBOL!= "All") {
       filtered_data <- filtered_data[filtered_data$SYMBOL == input$col_SYMBOL,]
     }
-    
+
     # Filter HGVSc transcript
-    
+
     # if (input$col_HGVSc!= "All") {
     #   filtered_data <- filtered_data[filtered_data$HGVSc == input$col_HGVSc,]
     # }
-    
+
     # Filter gnomad allele frequency column
     # if (input$col_gnomAD_AF!= "All") {
     #   filtered_data <- filtered_data[filtered_data$gnomAD_AF == input$col_gnomAD_AF,]
     # }
-    
+
     # Filter SpliceAI columns
     if (input$col_SpliceAI_DS_AG!= "All") {
       sep <- str_split(input$col_SpliceAI_DS_AG, "-")
@@ -452,7 +455,7 @@ server <- function(input, output, session) {
       filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AG >= start,]
       filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AG <= end,]
     }
-    
+
     if (input$col_SpliceAI_DS_AL!= "All") {
       sep <- str_split(input$col_SpliceAI_DS_AL, "-")
       start <- sep[[1]][1]
@@ -460,7 +463,7 @@ server <- function(input, output, session) {
       filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AL >= start,]
       filtered_data <- filtered_data[filtered_data$SpliceAI_DS_AL <= end,]
     }
-    
+
     if (input$col_SpliceAI_DS_DG!= "All") {
       sep <- str_split(input$col_SpliceAI_DS_DG, "-")
       start <- sep[[1]][1]
@@ -468,7 +471,7 @@ server <- function(input, output, session) {
       filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DG >= start,]
       filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DG <= end,]
     }
-    
+
     if (input$col_SpliceAI_DS_DL!= "All") {
       sep <- str_split(input$col_SpliceAI_DS_DL, "-")
       start <- sep[[1]][1]
@@ -476,7 +479,7 @@ server <- function(input, output, session) {
       filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DL >= start,]
       filtered_data <- filtered_data[filtered_data$SpliceAI_DS_DL <= end,]
     }
-    
+
     # Filter MMSplice column
     if (input$col_mmsplice_delta_logit_psi!= "All") {
       if (input$col_mmsplice_delta_logit_psi == "Less than 0") {
@@ -489,7 +492,7 @@ server <- function(input, output, session) {
         filtered_data <- filtered_data[filtered_data$mmsplice_delta_logit_psi <= end,]
       }
     }
-    
+
     # Filter MES columns
     if (input$col_MaxEntScan_alt != "All") {
       if (input$col_MaxEntScan_alt == "Less than 0") {
@@ -502,7 +505,7 @@ server <- function(input, output, session) {
         filtered_data <- filtered_data[filtered_data$MaxEntScan_alt <= end,]
       }
     }
-    
+
     if (input$col_MaxEntScan_diff != "All") {
       if (input$col_MaxEntScan_diff == "Less than 0") {
         filtered_data <- filtered_data[filtered_data$MaxEntScan_diff <= 0,]
@@ -514,7 +517,7 @@ server <- function(input, output, session) {
         filtered_data <- filtered_data[filtered_data$MaxEntScan_diff <= end,]
       }
     }
-    
+
     # Filter SQUIRLS column
     if (input$col_SQUIRLS!= "All") {
       sep <- str_split(input$col_SQUIRLS, "-")
@@ -523,12 +526,12 @@ server <- function(input, output, session) {
       filtered_data <- filtered_data[filtered_data$SQUIRLS >= start,]
       filtered_data <- filtered_data[filtered_data$SQUIRLS <= end,]
     }
-    
+
     # Filter TP/FP column
     if (input$col_Type!= "All") {
       filtered_data <- filtered_data[filtered_data$Type == input$col_Type,]
     }
-    
+
     # Filter VCF quality score column
     if (input$col_QUAL!= "All") {
       sep <- str_split(input$col_QUAL, "-")
@@ -537,33 +540,33 @@ server <- function(input, output, session) {
       filtered_data <- filtered_data[filtered_data$QUAL >= start,]
       filtered_data <- filtered_data[filtered_data$QUAL <= end,]
     }
-    
+
     # Show table of filtered data #
     output$splice_table <- DT::renderDataTable(DT::datatable({
       filtered_data
     }))
-    
+
     ### Refresh Performance metrics TP, FP, FDR = FP / (FP + TP) ###
     output$metrics_table <- DT::renderDataTable(DT::datatable({
-      
+
       # Get metrics
       TP <- nrow(filtered_data[filtered_data$Type == "TP",])
       FP <- nrow(filtered_data[filtered_data$Type == "FP",])
       FDR <- FP / (FP + TP)
-      
-      # create matrix 
+
+      # create matrix
       table= matrix(c(TP, FP, FDR), ncol=3, byrow=TRUE)
-      
+
       # specify the column names and row names of matrix
       colnames(table) <- c('TP','FP','FDR')
-      
+
       # assign to table
       metrics=as.data.frame(table)
-      
+
       metrics
       metricsDebug<<-metrics
     }))
-    
+
     ### Refresh TP-FP trade-off plot ###
     output$main_plot <- tryCatch(
       {
@@ -586,10 +589,10 @@ server <- function(input, output, session) {
         NULL
       }
     )
-    
-    ### TP-FP trade-off plot filtered ### 
-    # https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot   
-    # https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r 
+
+    ### TP-FP trade-off plot filtered ###
+    # https://stackoverflow.com/questions/70841834/false-positive-vs-false-negative-trade-off-plot
+    # https://stackoverflow.com/questions/6939136/how-to-overlay-density-plots-in-r
     output$filtered_plot <- tryCatch(
       {
         plot_func(filtered_data, input$plot)
@@ -612,25 +615,25 @@ server <- function(input, output, session) {
       }
     )
   })
-  
+
   ### Reset slider inputs ###
   observeEvent(input$Reset, {
-    
+
     # Reset SpliceAI cutoff
     updateSliderInput(session, "SpliceAI", value = 0.3)
-    
+
     # Reset MES cutoff
     updateSelectInput(session, "MES", selected = "Low")
-    
+
     # Reset SQUIRLS cutoff
     updateSliderInput(session, "SQUIRLS", value = 0.5)
-    
+
     # Reset MMSplice cutoff
     updateSliderInput(session, "MMSplice", value = 0.5)
-    
+
     # Reset gnomAD cutoff
     updateSelectInput(session, "gnomAD", selected = "0.01")
-    
+
     # Reset Detected by GeneSplicer?
     updateRadioButtons(session, "GeneSplicer", selected = "No")
   })
