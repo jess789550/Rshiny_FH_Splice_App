@@ -6,6 +6,7 @@ library(DT)
 library(shinydashboard) # for box()
 library(ggplot2)
 library(stringr)
+library(dplyr)
 
 ##### Define UI: https://shiny.posit.co/r/gallery/widgets/basic-datatable/ #####
 ui <- dashboardPage(
@@ -258,8 +259,10 @@ server <- function(input, output, session) {
     if (input$MMSplice != 0) {
       dataFilteredMMSplice <- data[which(data$mmsplice_delta_logit_psi!='-'),]
       dataFilteredMMSplice$mmsplice_delta_logit_psi <- as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi)
-      data <- rbind(data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) < (-1 * input$MMSplice),], 
-                    data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) > input$MMSplice,])
+      #data <- rbind(data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) < (-1 * input$MMSplice),], 
+      #              data[as.numeric(dataFilteredMMSplice$mmsplice_delta_logit_psi) > input$MMSplice,])
+      data <- rbind(dataFilteredMMSplice %>% filter(mmsplice_delta_logit_psi < (-1 * input$MMSplice)),
+                    dataFilteredMMSplice %>% filter(mmsplice_delta_logit_psi > input$MMSplice))
     }
     
     #if (input$Pangolin != 0) {
@@ -633,4 +636,4 @@ shinyApp(ui = ui, server = server)
 
 ##### Notes for Deployment #####
 # library(rsconnect)
-# rsconnect::deployApp('/data/jess_tmp/fh/Rshiny/splice') 
+# rsconnect::deployApp('/data/jess_tmp/fh/Rshiny/fh_splice') 
