@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FH Splice App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border: 1px solid #ddd;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>FH Splice App Description</h1>
+<p>This app allows the user to view splice site prediction results from SpliceAI, MaxEntScan, MMSplice, GeneSplicer, and SQUIRLS.</p>
+<p>The user can adjust cutoff thresholds for each tool and the app will show how this affects the false discovery rate.</p>
+<p>Default settings are the optimum values for this dataset.</p>
+
+<h2>Results for the following worklists can be viewed:</h2>
+<ul>
+    <li>2004442 (32 samples containing controls and GIAB samples, 3 positive)</li>
+    <li>2005265 (similar to above)</li>
+    <li>2005267 (similar to above)</li>
+    <li>2005745 (similar to above)</li>
+    <li>2324533 (64 samples, 2 positive)</li>
+    <li>2400720 (64 samples, 2 positive)</li>
+    <li>2322015 (64 samples, 2 positive)</li>
+    <li>2127291 (64 samples, 2 positive)</li>
+    <li>2226732 (64 samples, 2 positive)</li>
+    <li>2327211 (64 samples, 1 positive)</li>
+    <li>2330804 (64 samples, 1 positive)</li>
+    <li>2331473 (64 samples, 1 positive)</li>
+    <li>mix (64 samples, 19 positive)</li>
+</ul>
+
+<h3>Cutoffs and Scores</h3>
+
+<p>The SpliceAI delta score of a variant, defined as the maximum of (DS_AG, DS_AL, DS_DG, DS_DL), ranges from 0 to 1 and can be interpreted as the probability of the variant being splice-altering.</p>
+
+<p>MES cutoff:</p>
+<ul>
+    <li>Low potential of disrupting native splice sites is diff &gt; 0 and alt &lt; 8.5; or diff &lt; 0 and alt &gt; 6.2</li>
+    <li>High potential of disrupting native splice sites is diff &gt; 0 and alt &lt; 6.2; or diff &lt; 0 and alt &gt; 8.5</li>
+</ul>
+
+<p>The SQUIRLS score denotes a probability of the variant being splice-altering ranging from 0 to 1.</p>
+
+<p>Delta_logit_psi is the main score predicted by MMSplice, which shows the effect of the variant on the inclusion level (PSI percent spliced in) of the exon. 0 is the most lenient threshold and 2 is the strictest.</p>
+
+<p>Although GeneSplicer has low recall, it has been added at a clinical scientist's request. A context of 100 base pairs (default) was used which means is the amount of sequence included either side of the variant.</p>
+
+<p>Other tools considered were either too slow (Spliceator, DSSP, Pangolin, DNABERT) or were deprecated (KipoiSplice, PresPSI-SVR, Splice2Deep, S-CAP).</p>
+
+<p>The gnomAD allele frequency can be filtered to less than or equal to 0, 0.0001, 0.0002 (PM2), 0.002 (BS1), 0.005 (BA1), or None (no filter).</p>
+
+<h1>How to use</h1>
+<p>Use sliders to filter data then press "submit".</p>
+<p>To filter the splice variants and prediction scores table, please press "Filter" after using splice variant table column filters.</p>
+<p>Navigate through the different tabs to see the results.</p>
+
+<h1>Run app locally</h1>
+<pre>
+cd &lt;path_to_app&gt;
+R
+library(shiny)
+runApp("splice")
+</pre>
+
+<h1>View app online</h1>
+<p><a href="https://jessicakan.shinyapps.io/splice/">https://jessicakan.shinyapps.io/splice/</a></p>
+
+<h1>Author</h1>
+<p>Jessica Kan</p>
+
+<h1>References</h1>
+<ul>
+    <li>Jaganathan, K., Kyriazopoulou Panagiotopoulou, S., McRae, J. F., Darbandi, S. F., Knowles, D., Li, Y. I., Kosmicki, J. A., Arbelaez, J., Cui, W., Schwartz, G. B., Chow, E. D., Kanterakis, E., Gao, H., Kia, A., Batzoglou, S., Sanders, S. J. and Farh, K. K. (2019) 'Predicting Splicing from Primary Sequence with Deep Learning', Cell, 176(3), pp. 535-548.e24.</li>
+    <li>Yeo, G. and Burge, C. B. (2004) 'Maximum entropy modeling of short sequence motifs with applications to RNA splicing signals', J Comput Biol, 11(2-3), pp. 377-94.</li>
+    <li>Cheng, J., Nguyen, T. Y. D., Cygan, K. J., Çelik, M. H., Fairbrother, W. G., Avsec, Ž. and Gagneur, J. (2019) 'MMSplice: modular modeling improves the predictions of genetic variant effects on splicing', Genome Biol, 20(1), pp. 48.</li>
+    <li>Danis, D., Jacobsen, J. O. B., Carmody, L. C., Gargano, M. A., McMurry, J. A., Hegde, A., Haendel, M. A., Valentini, G., Smedley, D. and Robinson, P. N. (2021) 'Interpretable prioritization of splice variants in diagnostic next-generation sequencing', Am J Hum Genet, 108(11), pp. 2205.</li>
+    <li>Shamsani, J., Kazakoff, S.H., Armean, I.M., McLaren, W., Parsons, M.T., Thompson, B.A., O’Mara, T.A., Hunt, S.E., Waddell, N., and Spurdle, A.B. (2018) 'A plugin for the Ensembl variant effect predictor that uses MaxEntScan to predict variant spliceogenicity', Bioinformatics, 35(13), pp.2315–2317.</li>
+    <li>Pertea, M., Lin, X. and Salzberg, S. L. (2001) 'GeneSplicer: a new computational method for splice site prediction', Nucleic Acids Res, 29(5), pp. 1185-90.</li>
+</ul>
+
+</body>
+</html>
