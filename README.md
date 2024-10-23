@@ -1,7 +1,25 @@
 # Splice apps
 These apps allows the user to view splice site prediction results from SpliceAI, MaxEntScan, MMSplice, GeneSplicer, and SQUIRLS. The data must originate from the OUH FH or Exome pipeline. The FH splice app demonstrates the FH validation data and the Exome splice app demonstrates the Exome validation data. The generic splice app allows the user to upload their own CSV file with columns: 
 
-file_id	CHROM	POS	REF	ALT	SYMBOL	HGVSc	gnomAD_AF	SpliceAI_DS_AG	SpliceAI_DS_AL	SpliceAI_DS_DG	SpliceAI_DS_DL	mmsplice_delta_logit_psi	MaxEntScan_alt	MaxEntScan_diff	GeneSplicer_score	SQUIRLS	Type	QUAL
+- file_id
+- CHROM
+- POS
+- REF
+- ALT
+- SYMBOL
+- HGVSc
+- gnomAD_AF
+- SpliceAI_DS_AG
+- SpliceAI_DS_AL
+- SpliceAI_DS_DG
+- SpliceAI_DS_DL
+- mmsplice_delta_logit_psi
+- MaxEntScan_alt
+- MaxEntScan_diff
+- GeneSplicer_score
+- SQUIRLS
+- Type
+- QUAL
 
 
 The user can adjust cutoff thresholds for each tool and the app will show how this affects the false discovery rate.
@@ -59,18 +77,18 @@ Other tools considered were either too slow (Spliceator, DSSP, Pangolin, DNABERT
 The gnomAD allele frequency can be filtered to less than or equal to 0, 0.0001, 0.0002 (PM2), 0.002 (BS1), 0.005 (BA1), or None (no filter).
 
 
-# How to use
-Choose/upload CSV file.
+## How to use
+1. Choose/upload CSV file.
 
-Use sliders to filter data then press "Submit". 
+2. Use sliders to filter data then press "Submit". 
 
-To filter the splice variants and prediction scores table Please press "Filter" after using splice variant table column filters.
+3. To filter the splice variants and prediction scores table Please press "Filter" after using splice variant table column filters.
 
-Navigate through the different tabs to see the results.
+4. Navigate through the different tabs to see the results.
 
 
 
-# Run app locally
+## Run app locally
 ```
 cd <path_to_app>
 R
@@ -79,8 +97,15 @@ runApp("splice")
 ```
 
 
+## Deployment command example
+```
+R
+library(rsconnect)
+rsconnect::deployApp('/data/jess_tmp/fh/Rshiny/fh_splice') 
+```
 
-# View apps online
+
+## View apps online
 https://jessicakan.shinyapps.io/fh_splice/ 
 https://jessicakan.shinyapps.io/exome_splice/ 
 https://jessicakan.shinyapps.io/splice/ 
@@ -88,12 +113,12 @@ https://jessicakan.shinyapps.io/splice/
 
 
 
-# Author
+## Author
 Jessica Kan
 
 
 
-# References
+## References
 Jaganathan, K., Kyriazopoulou Panagiotopoulou, S., McRae, J. F., Darbandi, S. F., Knowles, D., Li, Y. I., Kosmicki, J. A., Arbelaez, J., Cui, W., Schwartz, G. B., Chow, E. D., Kanterakis, E., Gao, H., Kia, A., Batzoglou, S., Sanders, S. J. and Farh, K. K. (2019) 'Predicting Splicing from Primary Sequence with Deep Learning', Cell, 176(3), pp. 535-548.e24.
 
 Yeo, G. and Burge, C. B. (2004) 'Maximum entropy modeling of short sequence motifs with applications to RNA splicing signals', J Comput Biol, 11(2-3), pp. 377-94.
