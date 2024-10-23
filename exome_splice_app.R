@@ -63,7 +63,10 @@ ui <- dashboardPage(
     actionButton(inputId = "Submit", label = "Submit"),
     
     # Add button to reset slider inputs
-    actionButton(inputId = "Reset", label = "Reset")
+    actionButton(inputId = "Reset", label = "Reset back to optimum"),
+    
+    # Add button to have no filters
+    actionButton(inputId = "Zero", label = "Reset all to zero (Unfiltered)")
   ),
   
   ### Create a main panel to display table of results ###
@@ -72,7 +75,9 @@ ui <- dashboardPage(
     tabsetPanel(type = "tabs",
                 tabPanel("Description" ,
                          # Add description from README.md
-                         uiOutput('Description'),
+                         #uiOutput('Description'),
+                         # Use HTML file
+                         htmlOutput("Description"),
                 ),
                 tabPanel("Splice variants and prediction scores",
                          # Table of splice variants and prediction scores
@@ -127,6 +132,8 @@ ui <- dashboardPage(
                                         column(2, actionButton(inputId = "Filter", label = "Filter"))
                                       ))),
                          br(),
+                         p("Note: this table can be filtered using the options on the side panel to the left and the options above."),
+                         p("Red is low probability that a variant is splice-site-affecting and Green is a high probability."),
                          fluidRow(box(width=10, style='width:800px;overflow-x: scroll; overflow-y: scroll;',
                                       DT::dataTableOutput("splice_table"),))
                 ),
@@ -152,17 +159,25 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   
   ### Get description from README.md ###
+  # output$Description <- renderUI({
+  #   rawText <- readLines('README.md') # get raw text
+  # 
+  #   # split the text into a list of character vectors
+  #   #   Each element in the list contains one line
+  #   splitText <- stringi::stri_split(str = rawText, regex = '\\n')
+  # 
+  #   # wrap a paragraph tag around each element in the list
+  #   replacedText <- lapply(splitText, p)
+  # 
+  #   return(replacedText)
+  # })
+  
+  addResourcePath("tmpuser", getwd())
   output$Description <- renderUI({
-    rawText <- readLines('README.md') # get raw text
-
-    # split the text into a list of character vectors
-    #   Each element in the list contains one line
-    splitText <- stringi::stri_split(str = rawText, regex = '\\n')
-
-    # wrap a paragraph tag around each element in the list
-    replacedText <- lapply(splitText, p)
-
-    return(replacedText)
+    tags$iframe(seamless="seamless", 
+                src= "tmpuser/description.html",
+                width=1500, 
+                height=3000)
   })
   
   ### On click of submit button produce tables and plot ###
@@ -301,9 +316,28 @@ server <- function(input, output, session) {
 
     ### Show table of filtered data ###
     output$splice_table <- DT::renderDataTable(DT::datatable({
-      data
+      # Create the initial datatable
+      tbl <- DT::datatable(filtered_data)
+      
+      # Apply formatStyle to the created datatable
+      tbl <- tbl %>% 
+        formatStyle(9:12, # spliceAI columns
+                    backgroundColor = styleInterval(c(0.2, 0.5, 0.8), c('white', 'pink', 'peachpuff', 'palegreen')),
+        ) %>%
+        formatStyle(13,  # MMSplice column
+                    backgroundColor = styleInterval(c(-2, -1, -0.5, 0.5, 1, 2), 
+                                                    c('palegreen', 'peachpuff', 'pink', 'white', 'pink', 'peachpuff', 'palegreen')),
+        ) %>%
+        formatStyle(16,  # GeneSplicer column
+                    backgroundColor = styleInterval(c(0), c('pink', 'palegreen')) 
+        ) %>%
+        formatStyle(17,  # SQUIRLS column
+                    backgroundColor = styleInterval(c(0.5, 0.9), 
+                                                    c('pink', 'peachpuff', 'palegreen')),
+        )
+      
+      return (tbl)
     }))
-
     ### Performance metrics TP, FP, FDR = FP / (FP + TP) ###
     output$metrics_table <- DT::renderDataTable(DT::datatable({
 
@@ -620,7 +654,7 @@ server <- function(input, output, session) {
   observeEvent(input$Reset, {
 
     # Reset SpliceAI cutoff
-    updateSliderInput(session, "SpliceAI", value = 0.3)
+    updateSliderInput(session, "SpliceAI", value = 0.2)
 
     # Reset MES cutoff
     updateSelectInput(session, "MES", selected = "Low")
@@ -634,6 +668,28 @@ server <- function(input, output, session) {
     # Reset gnomAD cutoff
     updateSelectInput(session, "gnomAD", selected = "0.01")
 
+    # Reset Detected by GeneSplicer?
+    updateRadioButtons(session, "GeneSplicer", selected = "No")
+  })
+  
+  ### Reset slider inputs ###
+  observeEvent(input$Zero, {
+    
+    # Reset SpliceAI cutoff
+    updateSliderInput(session, "SpliceAI", value = 0)
+    
+    # Reset MES cutoff
+    updateSelectInput(session, "MES", selected = "None")
+    
+    # Reset SQUIRLS cutoff
+    updateSliderInput(session, "SQUIRLS", value = 0)
+    
+    # Reset MMSplice cutoff
+    updateSliderInput(session, "MMSplice", value = 0)
+    
+    # Reset gnomAD cutoff
+    updateSelectInput(session, "gnomAD", selected = "None")
+    
     # Reset Detected by GeneSplicer?
     updateRadioButtons(session, "GeneSplicer", selected = "No")
   })
