@@ -1,9 +1,14 @@
-# FH splice app Description
-This app allows the user to view splice site prediction results from SpliceAI, MaxEntScan, MMSplice, GeneSplicer, and SQUIRLS.
+# Splice apps
+These apps allows the user to view splice site prediction results from SpliceAI, MaxEntScan, MMSplice, GeneSplicer, and SQUIRLS. The data must originate from the OUH FH or Exome pipeline. The FH splice app demonstrates the FH validation data and the Exome splice app demonstrates the Exome validation data. The generic splice app allows the user to upload their own CSV file with columns: 
+
+file_id	CHROM	POS	REF	ALT	SYMBOL	HGVSc	gnomAD_AF	SpliceAI_DS_AG	SpliceAI_DS_AL	SpliceAI_DS_DG	SpliceAI_DS_DL	mmsplice_delta_logit_psi	MaxEntScan_alt	MaxEntScan_diff	GeneSplicer_score	SQUIRLS	Type	QUAL
+
 
 The user can adjust cutoff thresholds for each tool and the app will show how this affects the false discovery rate.
 
-Default settings are the optimum values for this dataset.
+Default settings are the optimum values for OUH FH and Exome data.
+
+## FH app worklists
 
 Results for the following worklists can be viewed:
 - 2004442 (32 samples containing controls and GIAB samples, 3 positive)
@@ -20,25 +25,44 @@ Results for the following worklists can be viewed:
 - 2331473 (64 samples, 1 positive)
 - mix (64 samples, 19 positive)
 
-The SpliceAI delta score of a variant, defined as the maximum of (DS_AG, DS_AL, DS_DG, DS_DL), ranges from 0 to 1 and can be interpreted as the probability of the variant being splice-altering. 
+## Exome app worklists
 
-MES cutoff:
-- Low potential of disrupting native splice sites is diff > 0 and alt < 8.5; or diff < 0 and alt > 6.2
-- High potential of disrupting native splice sites is diff > 0 and alt < 6.2; or diff < 0 and alt > 8.5
+Results for the following validation worklists:
+- 1234567
+- 1234568
+- 1234569
+- 1234570
+- 1234571
+- 1234572
+- 1234573
+- 1234574
 
-The SQUIRLS score denotes a probability of the variant being splice-altering ranging from 0 to 1.
+Each worklist contains 4 positive samples, 59 negative samples, and 1 GIAB sample.
 
-Delta_logit_psi is the main score is predicted by MMSplice, which shows the effect of the variant on the inclusion level (PSI percent spliced in) of the exon. 0 is the most lenient threshold and 2 is the strictest.
+## Cutoffs and thresholds
 
-Although GeneSplicer has low recall, it has been added at a clinical scientist's request. A context of 100 base pairs (default) was used which means is the amount of sequence included either side of the variant.
+The SpliceAI delta score of a variant, defined as the maximum of (DS_AG, DS_AL, DS_DG, DS_DL), ranges from 0 to 1 and can be interpreted as the probability of the variant being splice-altering. In the scores table, 0.2-0.5 is colored red, 0.5-0.8 is colored amber, and 0.8-1 is colored green.
+
+MaxEntScan (MES) outputs a diff and alt score which are used to assess the potential of disrupting a native splice site. In the scores table, Low potential is colored red, Medium is colored amber, and High potential is colored green. The MES cutoff filters are:
+- None = Unfiltered
+- Low = potential of disrupting native splice sites is diff > 0 and alt < 8.5; or diff < 0 and alt > 6.2
+- High = potential of disrupting native splice sites is diff > 0 and alt < 6.2; or diff < 0 and alt > 8.5
+
+The SQUIRLS score denotes a probability of the variant being splice-altering ranging from 0 to 1. In the scores table, 0-0.5 is colored red, 0.5-0.9 is colored amber, and 0.9-1 is colored green.
+
+Delta_logit_psi is the main score predicted by MMSplice, which shows the effect of the variant on the inclusion level (PSI percent spliced in) of the exon. 0 is the most lenient threshold and 2 is the strictest. In the scores table, 0.5 < |delta_logit_psi| < 1 is colored red, 1 < |delta_logit_psi| < 2 is colored amber, and |delta_logit_psi| > 2 is colored green.
+
+Although GeneSplicer has low recall, it has been added at a clinical scientist's request. A context of 100 base pairs (default) was used, which means it is the amount of sequence included either side of the variant. In the scores table, the absence of a score is colored red, and the presence of a score is colored green.
 
 Other tools considered were either too slow (Spliceator, DSSP, Pangolin, DNABERT) or were deprecated (KipoiSplice, PresPSI-SVR, Splice2Deep, S-CAP).
 
-The gnomAD allele frequency can be filter to less than or equal to 0, 0.0001, 0.0002 (PM2), 0.002 (BS1), 0.005 (BA1), or None (no filter).
+The gnomAD allele frequency can be filtered to less than or equal to 0, 0.0001, 0.0002 (PM2), 0.002 (BS1), 0.005 (BA1), or None (no filter).
 
 
 # How to use
-Use sliders to filter data then press "submit". 
+Choose/upload CSV file.
+
+Use sliders to filter data then press "Submit". 
 
 To filter the splice variants and prediction scores table Please press "Filter" after using splice variant table column filters.
 
@@ -56,8 +80,10 @@ runApp("splice")
 
 
 
-# View app online
+# View apps online
 https://jessicakan.shinyapps.io/fh_splice/ 
+https://jessicakan.shinyapps.io/exome_splice/ 
+https://jessicakan.shinyapps.io/splice/ 
 
 
 
