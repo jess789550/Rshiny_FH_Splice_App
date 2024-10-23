@@ -47,19 +47,20 @@
 
 <h3>Cutoffs and Scores</h3>
 
-<p>The SpliceAI delta score of a variant, defined as the maximum of (DS_AG, DS_AL, DS_DG, DS_DL), ranges from 0 to 1 and can be interpreted as the probability of the variant being splice-altering.</p>
+<p>The SpliceAI delta score of a variant, defined as the maximum of (DS_AG, DS_AL, DS_DG, DS_DL), ranges from 0 to 1 and can be interpreted as the probability of the variant being splice-altering. In the scores table, 0.2-0.5 is coloured red, 0.5-0.8 is coloured amber, and 0.8-1 is coloured green. </p>
 
-<p>MES cutoff:</p>
+<p>MaxEntScan (MES) outputs a diff and alt score which are used to assess the potential of disrupting a native splice site. In the scores table, Low potential is coloured red, Medium is coloured amber, and High potential is coloured green. The MES cutoff filters are:</p>
 <ul>
-    <li>Low potential of disrupting native splice sites is diff &gt; 0 and alt &lt; 8.5; or diff &lt; 0 and alt &gt; 6.2</li>
-    <li>High potential of disrupting native splice sites is diff &gt; 0 and alt &lt; 6.2; or diff &lt; 0 and alt &gt; 8.5</li>
+    <li>None = Unfiltered</li>
+    <li>Low = potential of disrupting native splice sites is diff &gt; 0 and alt &lt; 8.5; or diff &lt; 0 and alt &gt; 6.2</li>
+    <li>High = potential of disrupting native splice sites is diff &gt; 0 and alt &lt; 6.2; or diff &lt; 0 and alt &gt; 8.5</li>
 </ul>
 
-<p>The SQUIRLS score denotes a probability of the variant being splice-altering ranging from 0 to 1.</p>
+<p>The SQUIRLS score denotes a probability of the variant being splice-altering ranging from 0 to 1. In the scores table, 0-0.5 is coloured red, 0.5-0.9 is coloured amber, and 0.9-1 is coloured green.</p>
 
-<p>Delta_logit_psi is the main score predicted by MMSplice, which shows the effect of the variant on the inclusion level (PSI percent spliced in) of the exon. 0 is the most lenient threshold and 2 is the strictest.</p>
+<p>Delta_logit_psi is the main score predicted by MMSplice, which shows the effect of the variant on the inclusion level (PSI percent spliced in) of the exon. 0 is the most lenient threshold and 2 is the strictest. In the scores table, 0.5&lt;|delta_logit_psi|&lt;1 is coloured red, 1&lt;|delta_logit_psi|&lt;2 is coloured amber, and |delta_logit_psi|&gt;2 is coloured green.</p>
 
-<p>Although GeneSplicer has low recall, it has been added at a clinical scientist's request. A context of 100 base pairs (default) was used which means is the amount of sequence included either side of the variant.</p>
+<p>Although GeneSplicer has low recall, it has been added at a clinical scientist's request. A context of 100 base pairs (default) was used which means is the amount of sequence included either side of the variant. In the scores table, absence of a score is coloured red, and presence of a score is coloured green.</p>
 
 <p>Other tools considered were either too slow (Spliceator, DSSP, Pangolin, DNABERT) or were deprecated (KipoiSplice, PresPSI-SVR, Splice2Deep, S-CAP).</p>
 
@@ -69,6 +70,8 @@
 <p>Use sliders to filter data then press "submit".</p>
 <p>To filter the splice variants and prediction scores table, please press "Filter" after using splice variant table column filters.</p>
 <p>Navigate through the different tabs to see the results.</p>
+<p>The "Reset back to optimum" button changes the sliders back to the default optimum values.</p>
+<p>The "Reset all to zero (Unfiltered)" button changes the sliders to zero giving all data values.</p>
 
 <h1>Run app locally</h1>
 <pre>
@@ -79,7 +82,7 @@ runApp("splice")
 </pre>
 
 <h1>View app online</h1>
-<p><a href="https://jessicakan.shinyapps.io/splice/">https://jessicakan.shinyapps.io/splice/</a></p>
+<p><a href="https://jessicakan.shinyapps.io/fh_splice/">https://jessicakan.shinyapps.io/fh_splice/</a></p>
 
 <h1>Author</h1>
 <p>Jessica Kan</p>
