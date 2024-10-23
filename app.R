@@ -1,4 +1,4 @@
-# FH DEVELOPMENT VERSION #
+# FH DEPLOYMENT VERSION #
 
 ##### Load libraries ######
 library(shiny)
@@ -60,14 +60,15 @@ ui <- dashboardPage(
     selectInput("plot", "FDR plot:", choices = c("SpliceAI_DS_AG", "SpliceAI_DS_AL", "SpliceAI_DS_DG", 
                                                  "SpliceAI_DS_DL", "MaxEntScan_alt", "SQUIRLS", "mmsplice_delta_logit_psi")),
     
-    # Add button for user to press to initiate run
-    actionButton(inputId = "Submit", label = "Submit"),
-    
     # Add button to reset slider inputs
     actionButton(inputId = "Reset", label = "Reset back to optimum"),
     
     # Add button to reset slider inputs to zero
-    actionButton(inputId = "Zero", label = "Reset all to zero (Unfiltered)")
+    actionButton(inputId = "Zero", label = "Reset all to zero (Unfiltered)"),
+    br(), br(), br(),
+    
+    # Add button for user to press to initiate run
+    actionButton(inputId = "Submit", label = "Submit")
   ),
   
   ### Create a main panel to display table of results ###
@@ -305,26 +306,39 @@ server <- function(input, output, session) {
     
     filtered_data <<- data  # set global variable so filtered_data can be accessed below
     
+    # Preprocessing to add a colour column specifically for MaxEntScan
+    edit_data <- filtered_data %>%
+      mutate(MaxEntScan_concl = case_when(
+        MaxEntScan_diff < 0 & MaxEntScan_alt > 8.5 ~ 'High',
+        MaxEntScan_diff < 0 & MaxEntScan_alt > 6.2 ~ 'Medium',
+        MaxEntScan_diff > 0 & MaxEntScan_alt < 6.2 ~ 'High',
+        MaxEntScan_diff > 0 & MaxEntScan_alt < 8.5 ~ 'Medium',
+        TRUE ~ 'Low' # Ensure to have a default case
+      ), .after=MaxEntScan_diff)
+    
     ### Show table of filtered data ###
     output$splice_table <- DT::renderDataTable(DT::datatable({
       # Create the initial datatable
-      tbl <- DT::datatable(filtered_data)
+      tbl <- DT::datatable(edit_data)
       
       # Apply formatStyle to the created datatable
       tbl <- tbl %>% 
         formatStyle(9:12, # spliceAI columns
                     backgroundColor = styleInterval(c(0.2, 0.5, 0.8), c('white', 'pink', 'peachpuff', 'palegreen')),
         ) %>%
-        formatStyle(13,  # MMSplice column
+        formatStyle('mmsplice_delta_logit_psi',  # MMSplice column
                     backgroundColor = styleInterval(c(-2, -1, -0.5, 0.5, 1, 2), 
                                                     c('palegreen', 'peachpuff', 'pink', 'white', 'pink', 'peachpuff', 'palegreen')),
         ) %>%
-        formatStyle(16,  # GeneSplicer column
-                    backgroundColor = styleEqual(c(''), c('gray')) 
+        formatStyle('GeneSplicer_score',  # GeneSplicer column
+                    backgroundColor = styleInterval(c(0), c('pink', 'palegreen')) 
         ) %>%
-        formatStyle(17,  # SQUIRLS column
+        formatStyle('SQUIRLS',  # SQUIRLS column
                     backgroundColor = styleInterval(c(0.5, 0.9), 
-                                  c('pink', 'peachpuff', 'palegreen')),
+                                                    c('pink', 'peachpuff', 'palegreen')),
+        ) %>%
+        formatStyle("MaxEntScan_concl",  
+                    backgroundColor = styleEqual(c('Low', 'Medium', 'High'), c('pink', 'peachpuff', 'palegreen')) # Reference the new column
         )
       
       return (tbl)
@@ -665,7 +679,7 @@ server <- function(input, output, session) {
     updateRadioButtons(session, "GeneSplicer", selected = "No")
     
   })
-    
+  
   ### Reset slider inputs ###
   observeEvent(input$Zero, {
     
